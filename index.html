@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Baby's First Foods Tracker</title>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Food Tracker">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sun:#F9C22E; --sun-dark:#E8A800;
+    --blush:#F7856E; --mint:#5BBFA3; --sky:#7EC8E3;
+    --lavender:#B8A9E0; --berry:#E07A8C;
+    --cream:#FFFDF5; --paper:#FFF9EE;
+    --ink:#3D2C1E; --muted:#8C7A6B; --dot-empty:#E8DDD0;
+    --radius:16px;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Quicksand',sans-serif; background:var(--cream); color:var(--ink); }
+
+  header { background:var(--sun); padding:26px 20px 54px; position:relative; overflow:hidden; }
+  header::after { content:''; position:absolute; bottom:-2px; left:0; right:0; height:36px; background:var(--cream); border-radius:50% 50% 0 0/100% 100% 0 0; }
+  .hinner { max-width:960px; margin:0 auto; position:relative; z-index:1; }
+  .badge { display:inline-block; background:rgba(255,255,255,.35); font-family:'Nunito',sans-serif; font-size:10px; font-weight:800; letter-spacing:2px; text-transform:uppercase; padding:3px 11px; border-radius:20px; margin-bottom:8px; }
+  h1 { font-family:'Nunito',sans-serif; font-size:clamp(24px,5vw,40px); font-weight:900; color:var(--ink); line-height:1.1; }
+  h1 span { color:#fff; -webkit-text-stroke:1.5px var(--sun-dark); }
+  header p { margin-top:6px; font-size:12px; color:var(--ink); opacity:.7; }
+  .hdeco { position:absolute; right:10px; top:8px; font-size:56px; opacity:.15; pointer-events:none; }
+
+  /* SYNC BADGE */
+  .sync-bar { max-width:960px; margin:0 auto; padding:8px 14px 0; display:flex; justify-content:flex-end; }
+  .sync-badge { display:inline-flex; align-items:center; gap:5px; font-family:'Nunito',sans-serif; font-size:11px; font-weight:700; padding:4px 10px; border-radius:20px; }
+  .sync-badge.connecting { background:#FFF3CD; color:#856404; }
+  .sync-badge.connected  { background:#D1FAE5; color:#065F46; }
+  .sync-badge.error      { background:#FEE2E2; color:#991B1B; }
+  .sync-dot { width:7px; height:7px; border-radius:50%; }
+  .sync-badge.connecting .sync-dot { background:#FFC107; animation:pulse 1s infinite; }
+  .sync-badge.connected  .sync-dot { background:#10B981; }
+  .sync-badge.error      .sync-dot { background:#EF4444; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  .namebar { max-width:960px; margin:8px auto 0; padding:0 14px; position:relative; z-index:2; }
+  .namewrap { background:#fff; border-radius:13px; padding:11px 18px; display:flex; align-items:center; gap:10px; box-shadow:0 4px 18px rgba(0,0,0,.08); border:2px solid transparent; }
+  .namewrap:focus-within { border-color:var(--sun); }
+  .namelbl { font-family:'Nunito',sans-serif; font-weight:800; font-size:12px; color:var(--muted); white-space:nowrap; }
+  .nameinp { border:none; outline:none; font-family:'Nunito',sans-serif; font-size:16px; font-weight:800; color:var(--ink); flex:1; background:transparent; }
+  .nameinp::placeholder { color:var(--dot-empty); }
+
+  main { max-width:960px; margin:16px auto; padding:0 14px; display:grid; gap:14px; }
+
+  .card { background:#fff; border-radius:var(--radius); overflow:hidden; box-shadow:0 2px 14px rgba(0,0,0,.06); }
+  .card.collapsed .card-body { display:none; }
+  .cardhead { padding:14px 18px; display:flex; align-items:center; gap:9px; cursor:pointer; -webkit-tap-highlight-color:transparent; touch-action:manipulation; width:100%; border:none; text-align:left; font-family:inherit; }
+  .chevron { margin-left:6px; font-size:14px; color:rgba(255,255,255,.8); transition:transform .25s; flex-shrink:0; }
+  .card.collapsed .chevron { transform:rotate(-90deg); }
+  .cardhead .icon { font-size:20px; }
+  .cardhead .title { font-family:'Nunito',sans-serif; font-size:13px; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; color:#fff; }
+  .cardhead .cnt { margin-left:auto; background:rgba(255,255,255,.3); color:#fff; font-family:'Nunito',sans-serif; font-size:11px; font-weight:700; padding:2px 8px; border-radius:10px; }
+  .h-veg{background:#5BBFA3} .h-fruit{background:#F7856E} .h-meat{background:#E07A8C}
+  .h-legume{background:#D4845A} .h-nuts{background:#B8964A} .h-grain{background:#B8A9E0}
+  .h-dairy{background:#7EC8E3} .h-allergen{background:#E07A8C} .h-notes{background:#C5B8E8}
+  /* nutrition tag pill */
+  .tag-nut { font-family:'Nunito',sans-serif; font-size:9px; font-weight:800; letter-spacing:.3px; padding:2px 6px; border-radius:20px; white-space:nowrap; flex-shrink:0; }
+
+  .foodgrid { padding:14px; display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:8px; }
+  .fi { display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border-radius:11px; background:var(--paper); transition:background .2s; gap:6px; }
+  .fi.tried { background:#F0FDF8; }
+  .fi.tried .fn { font-weight:700; }
+  .fi-left { display:flex; align-items:center; gap:6px; flex:1; min-width:0; }
+  .fn { font-size:14px; font-weight:600; color:var(--ink); }
+
+  /* food counter */
+  .counter-wrap { display:flex; flex-direction:column; align-items:center; gap:2px; flex-shrink:0; }
+  .counter { display:flex; align-items:center; gap:1px; }
+  .cbtn { background:none; border:none; cursor:pointer; font-size:22px; font-weight:900; line-height:1; padding:2px 3px; -webkit-tap-highlight-color:transparent; touch-action:manipulation; transition:transform .1s,opacity .15s; flex-shrink:0; }
+  .cbtn:active { transform:scale(.85); }
+  .cbtn.minus { color:var(--dot-empty); }
+  .cbtn.minus.has-val { color:var(--muted); }
+  .cbtn.plus { color:var(--dc-color, var(--mint)); }
+  .cval { font-family:'Nunito',sans-serif; font-size:16px; font-weight:900; color:var(--ink); min-width:22px; text-align:center; line-height:1; }
+  .cval.zero { color:var(--dot-empty); }
+  .clabel { font-size:9px; font-weight:700; color:var(--muted); letter-spacing:.5px; text-transform:uppercase; }
+  /* allergen last-exposure badge */
+  .last-exp { font-size:10px; font-weight:700; color:var(--berry); background:#FFE8ED; border-radius:6px; padding:2px 6px; text-align:center; white-space:nowrap; }
+  .last-exp.empty { color:var(--dot-empty); background:none; font-weight:600; font-size:10px; }
+
+  .thumbs { display:flex; gap:2px; flex-shrink:0; }
+  .thumb { font-size:18px; line-height:1; cursor:pointer; opacity:0.2; transition:opacity .15s, transform .1s; user-select:none; padding:2px; }
+  .thumb:hover { transform:scale(1.2); }
+  .thumb.on { opacity:1; }
+
+  .addbtn-wrap { padding:4px 12px 11px; }
+  .addbtn { font-family:'Nunito',sans-serif; font-size:13px; font-weight:700; color:var(--muted); background:none; border:2px dashed var(--dot-empty); padding:9px 12px; border-radius:8px; cursor:pointer; width:100%; }
+  .addbtn:hover { border-color:var(--sun); color:var(--ink); }
+
+  .a-info-box { margin:0 14px 10px; background:#FFF0EC; border-left:3px solid var(--berry); border-radius:8px; padding:8px 12px; font-size:11px; color:var(--muted); line-height:1.6; }
+  .a-col-heads { display:grid; grid-template-columns:1fr 110px 1fr; gap:8px; padding:4px 14px 6px; border-bottom:2px solid var(--dot-empty); }
+  .a-col-head { font-family:'Nunito',sans-serif; font-size:9px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:var(--muted); }
+  .a-col-head.center { text-align:center; }
+  .a-list { padding:6px 14px 14px; display:flex; flex-direction:column; gap:5px; }
+  .a-row { display:grid; grid-template-columns:1fr 110px 1fr; gap:8px; align-items:center; padding:10px 12px; border-radius:9px; background:var(--paper); }
+  .a-row.sub { background:#FFFAF8; padding-left:22px; }
+  .a-row.group { background:#FFF0EC; grid-template-columns:1fr; padding:6px 10px; }
+  .a-name { font-family:'Nunito',sans-serif; font-size:13px; font-weight:800; color:var(--ink); }
+  .a-row.sub .a-name { font-size:11.5px; font-weight:700; color:var(--muted); }
+  .a-row.group .a-name { font-size:12px; color:var(--berry); }
+  .a-ex { font-size:11px; color:var(--muted); line-height:1.4; margin-top:1px; }
+  .a-dots-wrap { display:flex; flex-direction:column; align-items:center; gap:3px; justify-content:center; }
+  .a-note { border:none; border-bottom:1.5px solid var(--dot-empty); padding:5px 2px; font-family:'Quicksand',sans-serif; font-size:13px; color:var(--ink); background:transparent; outline:none; width:100%; }
+  .a-note:focus { border-color:var(--berry); }
+  .a-note::placeholder { color:var(--dot-empty); font-size:11px; }
+
+  .notesgrid { padding:12px; display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  @media(max-width:480px){ .notesgrid{grid-template-columns:1fr} }
+  .nf { display:flex; flex-direction:column; gap:3px; }
+  .nl { font-size:9px; font-weight:700; color:var(--muted); letter-spacing:.5px; text-transform:uppercase; }
+  .ni { border:none; border-bottom:2px solid var(--dot-empty); padding:7px 2px; font-family:'Quicksand',sans-serif; font-size:14px; color:var(--ink); background:transparent; outline:none; width:100%; }
+  .ni:focus { border-color:var(--sun); }
+
+  .printbtn { display:block; margin:0 auto 16px; padding:10px 24px; background:var(--sun); color:var(--ink); font-family:'Nunito',sans-serif; font-weight:800; font-size:13px; border:none; border-radius:30px; cursor:pointer; box-shadow:0 4px 12px rgba(249,194,46,.4); }
+  .printbtn:hover { transform:translateY(-1px); }
+  footer { text-align:center; padding:8px 14px 32px; font-size:10.5px; color:var(--muted); line-height:1.7; }
+  footer strong { color:var(--ink); }
+
+  @media print {
+    @page { margin:8mm 7mm; size:A4; }
+    * { -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
+    body { background:#fff !important; }
+    header { padding:12px 14px 36px !important; }
+    header::after { background:#fff !important; }
+    .hdeco,.addbtn-wrap,.printbtn,.sync-bar { display:none !important; }
+    main { margin:10px auto !important; gap:9px !important; padding:0 6px !important; }
+    .card { box-shadow:none !important; border:1px solid #e0d8d0 !important; break-inside:avoid; }
+    .foodgrid { padding:7px !important; gap:4px !important; grid-template-columns:repeat(auto-fill,minmax(145px,1fr)) !important; }
+    .fi { padding:4px 8px !important; }
+    .fn { font-size:10.5px !important; }
+    .dot { width:9px !important; height:9px !important; }
+    .h-veg{background:#5BBFA3!important} .h-fruit{background:#F7856E!important}
+    .h-meat{background:#E07A8C!important} .h-legume{background:#D4845A!important}
+    .h-nuts{background:#B8964A!important} .h-grain{background:#B8A9E0!important}
+    .h-dairy{background:#7EC8E3!important} .h-allergen{background:#E07A8C!important}
+    .h-notes{background:#C5B8E8!important}
+    .cardhead .title,.cardhead .cnt { color:#fff !important; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdeco">🍼🥦🍓🥑🌾</div>
+  <div class="hinner">
+    <div class="badge">Starting Solids</div>
+    <h1>Baby's <span>First Foods</span> Tracker</h1>
+    <p>Tap › each time your baby tries a food. Track exposures and reactions!</p>
+  </div>
+</header>
+
+<div class="sync-bar">
+  <div class="sync-badge connecting" id="syncBadge">
+    <div class="sync-dot"></div>
+    <span id="syncText">Connecting…</span>
+  </div>
+</div>
+
+<div class="namebar">
+  <div class="namewrap">
+    <span class="namelbl">Baby's name:</span>
+    <input class="nameinp" id="babyName" type="text" placeholder="Enter name here…">
+  </div>
+</div>
+
+<main>
+  <div class="card" id="card-veg"><button class="cardhead h-veg" onclick="toggleCard('veg')" type="button"><span class="icon">🥦</span><span class="title">Vegetables</span><span class="cnt" id="cnt-veg">0 tried</span><span class="chevron">▾</span></button><div class="card-body"><div class="foodgrid" id="g-veg"></div><div class="addbtn-wrap"><button class="addbtn" onclick="addFood('veg')" type="button">＋ Add your own</button></div></div></div>
+  <div class="card" id="card-fruit"><button class="cardhead h-fruit" onclick="toggleCard('fruit')" type="button"><span class="icon">🍓</span><span class="title">Fruit</span><span class="cnt" id="cnt-fruit">0 tried</span><span class="chevron">▾</span></button><div class="card-body"><div class="foodgrid" id="g-fruit"></div><div class="addbtn-wrap"><button class="addbtn" onclick="addFood('fruit')" type="button">＋ Add your own</button></div></div></div>
+  <div class="card" id="card-meat"><button class="cardhead h-meat" onclick="toggleCard('meat')" type="button"><span class="icon">🥩</span><span class="title">Meat &amp; Fish</span><span class="cnt" id="cnt-meat">0 tried</span><span class="chevron">▾</span></button><div class="card-body"><div class="foodgrid" id="g-meat"></div><div class="addbtn-wrap"><button class="addbtn" onclick="addFood('meat')" type="button">＋ Add your own</button></div></div></div>
+  <div class="card" id="card-legume"><button class="cardhead h-legume" onclick="toggleCard('legume')" type="button"><span class="icon">🫘</span><span class="title">Legumes &amp; Beans</span><span class="cnt" id="cnt-legume">0 tried</span><span class="chevron">▾</span></button><div class="card-body"><div class="foodgrid" id="g-legume"></div><div class="addbtn-wrap"><button class="addbtn" onclick="addFood('legume')" type="button">＋ Add your own</button></div></div></div>
+  <div class="card" id="card-nuts"><button class="cardhead h-nuts" onclick="toggleCard('nuts')" type="button"><span class="icon">🥜</span><span class="title">Nuts &amp; Seeds</span><span class="cnt" id="cnt-nuts">0 tried</span><span class="chevron">▾</span></button><div class="card-body"><div class="foodgrid" id="g-nuts"></div><div class="addbtn-wrap"><button class="addbtn" onclick="addFood('nuts')" type="button">＋ Add your own</button></div></div></div>
+  <div class="card" id="card-grain"><button class="cardhead h-grain" onclick="toggleCard('grain')" type="button"><span class="icon">🌾</span><span class="title">Grains &amp; Cereals</span><span class="cnt" id="cnt-grain">0 tried</span><span class="chevron">▾</span></button><div class="card-body"><div class="foodgrid" id="g-grain"></div><div class="addbtn-wrap"><button class="addbtn" onclick="addFood('grain')" type="button">＋ Add your own</button></div></div></div>
+  <div class="card" id="card-dairy"><button class="cardhead h-dairy" onclick="toggleCard('dairy')" type="button"><span class="icon">🧀</span><span class="title">Dairy</span><span class="cnt" id="cnt-dairy">0 tried</span><span class="chevron">▾</span></button><div class="card-body"><div class="foodgrid" id="g-dairy"></div><div class="addbtn-wrap"><button class="addbtn" onclick="addFood('dairy')" type="button">＋ Add your own</button></div></div></div>
+
+  <div class="card" id="card-allergen">
+    <button class="cardhead h-allergen" onclick="toggleCard('allergen')" type="button"><span class="icon">⚠️</span><span class="title">Common Allergens</span><span class="chevron">▾</span></button>
+    <div class="card-body">
+    <div class="a-info-box">Introduce allergens one at a time, 3–5 days apart. Keep offering regularly once introduced. Fill a dot for each exposure and note any reactions.</div>
+    <div class="a-col-heads">
+      <div class="a-col-head">Allergen &amp; examples</div>
+      <div class="a-col-head center">Exposures</div>
+      <div class="a-col-head">Reactions / Notes</div>
+    </div>
+    <div class="a-list" id="a-list"></div>
+    </div>
+  </div>
+
+  <div class="card" id="card-notes">
+    <button class="cardhead h-notes" onclick="toggleCard('notes')" type="button"><span class="icon">📝</span><span class="title">General Notes</span><span class="chevron" style="color:rgba(61,44,30,.5)">▾</span></button>
+    <div class="card-body">
+    <div class="notesgrid" id="notesgrid"></div>
+    </div>
+  </div>
+</main>
+
+<div style="text-align:center;padding:0 14px 4px;">
+  <button class="printbtn" onclick="window.print()">🖨️ Print / Save as PDF</button>
+</div>
+<footer>
+  <strong>Important:</strong> Guide only — not a substitute for professional medical advice.<br>
+  Wait until 12 months to offer honey. Always supervise mealtimes.
+</footer>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, onSnapshot, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// ── Firebase config ──────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyADKgPXrm52Dv6R3qi1T9WhlpsXaPNWeRQ",
+  authDomain: "baby-solids-tracker-f2ded.firebaseapp.com",
+  projectId: "baby-solids-tracker-f2ded",
+  storageBucket: "baby-solids-tracker-f2ded.firebasestorage.app",
+  messagingSenderId: "600604955746",
+  appId: "1:600604955746:web:62786e9299da544e382d3b"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+const DOC = doc(db, "tracker", "shared");
+
+// ── Data ─────────────────────────────────────────────────────────
+// Nutrition tags: one standout nutrient per food (baby-specific priorities)
+const TAGS = {
+  // Vegetables
+  'Asparagus':'Folate',
+  'Beans':'Fibre',
+  'Beetroot':'Folate',
+  'Broccoli':'Vit C',       // Vit C aids iron absorption — very useful
+  'Cabbage':'Vit C',
+  'Capsicum':'Vit C',       // highest Vit C of any veg
+  'Carrot':'Vit A',
+  'Cauliflower':'Vit C',
+  'Corn':'Fibre',
+  'Eggplant':'Fibre',
+  'Mushrooms':'Vit D',      // rare non-animal Vit D source
+  'Parsnip':'Fibre',
+  'Peas':'Iron',            // good plant iron for a veg, plus protein
+  'Potato':'Potassium',
+  'Pumpkin':'Vit A',
+  'Spinach':'Folate',       // folate > iron here due to absorption issues
+  'Sweet potato':'Vit A',   // one of the richest Vit A sources
+  'Tomato':'Vit C',
+  // Fruit
+  'Apple':'Fibre',
+  'Apricot':'Vit A',
+  'Avocado':'H. Fats',      // healthy fats critical for brain development
+  'Banana':'Potassium',
+  'Blackberries':'Vit C',
+  'Blueberry':'Antioxidants',
+  'Fig':'Fibre',
+  'Kiwi fruit':'Vit C',
+  'Lemon':'Vit C',
+  'Mango':'Vit A',
+  'Nectarine':'Vit A',
+  'Orange':'Vit C',
+  'Pear':'Fibre',
+  'Peach':'Vit A',
+  'Pineapple':'Vit C',
+  'Prunes':'Fibre',
+  'Raspberry':'Vit C',
+  'Rockmelon':'Vit A',
+  'Strawberry':'Vit C',
+  // Meat & Fish — haem iron is the #1 priority at 6 months
+  'Beef':'Iron',            // best haem iron source
+  'Chicken':'Zinc',         // zinc > protein here; good zinc source
+  'Lamb':'Iron',            // high haem iron
+  'Pork':'Zinc',
+  'Turkey':'Zinc',
+  'Salmon':'Omega-3',       // DHA critical for brain development
+  'Sardines':'Omega-3',     // also high calcium from bones
+  'Tuna':'Omega-3',
+  'White fish':'Protein',
+  // Legumes & Beans
+  'Black beans':'Iron',
+  'Butterbeans':'Fibre',
+  'Cannellini beans':'Fibre',
+  'Chickpeas':'Iron',       // good plant iron
+  'Kidney beans':'Iron',
+  'Lentils':'Iron',         // best plant iron source
+  // Nuts & Seeds
+  'Chia seeds':'Omega-3',
+  'Hemp seeds':'Omega-3',
+  'Pumpkin seeds':'Zinc',   // one of the best plant zinc sources
+  'Sunflower seeds':'Vit E',
+  // Grains
+  'Barley':'Fibre',
+  'Oats':'Iron',            // iron-fortified; good first grain
+  'Quinoa':'Protein',       // complete protein — rare for a grain
+  'Weet-Bix':'Iron',        // fortified
+  // Dairy
+  'Plain yoghurt':'Calcium',
+  'Cottage cheese':'Protein',
+  'Goats cheese':'Calcium',
+  'Mozzarella':'Calcium',
+  'Ricotta':'Calcium',
+};
+
+// Tag colours
+const TAG_COLORS = {
+  'Iron':        { bg:'#FFE8ED', color:'#C0415A' },
+  'Protein':     { bg:'#EDE8FF', color:'#6B4FC7' },
+  'Omega-3':     { bg:'#E8F4FF', color:'#2E7FBF' },
+  'Calcium':     { bg:'#E8F8F4', color:'#2E8A6A' },
+  'Vit A':       { bg:'#FFF3E0', color:'#C07020' },
+  'Vit C':       { bg:'#FFF8E1', color:'#B08000' },
+  'Vit D':       { bg:'#F5F0FF', color:'#7050C0' },
+  'Vit E':       { bg:'#F0FFF0', color:'#3A8A3A' },
+  'Zinc':        { bg:'#F0F4FF', color:'#4060B0' },
+  'H. Fats':     { bg:'#FFFDE8', color:'#8A7800' },
+  'Fibre':       { bg:'#F0FFE8', color:'#4A8A20' },
+  'Folate':      { bg:'#FFF0F8', color:'#A03080' },
+  'Potassium':   { bg:'#FFF5E8', color:'#A06020' },
+  'Antioxidants':{ bg:'#F0E8FF', color:'#6040A0' },
+};
+
+const FOODS = {
+  veg:     { color:'#5BBFA3', label:'Vegetables',        icon:'🥦', items:['Asparagus','Beans','Beetroot','Broccoli','Cabbage','Capsicum','Carrot','Cauliflower','Celery','Corn','Cucumber','Eggplant','Garlic','Ginger','Lettuce','Mint','Mushrooms','Onion','Parsnip','Peas','Potato','Pumpkin','Rosemary','Shallot','Spinach','Sweet potato','Tomato','Zucchini'] },
+  fruit:   { color:'#F7856E', label:'Fruit',             icon:'🍓', items:['Apple','Apricot','Avocado','Banana','Blackberries','Blueberry','Fig','Grapes','Kiwi fruit','Lemon','Mango','Nectarine','Orange','Pear','Peach','Pineapple','Prunes','Raspberry','Rockmelon','Strawberry','Watermelon'] },
+  meat:    { color:'#E07A8C', label:'Meat & Fish',       icon:'🥩', items:['Beef','Chicken','Lamb','Pork','Salmon','Sardines','Tuna','Turkey','White fish'] },
+  legume:  { color:'#D4845A', label:'Legumes & Beans',   icon:'🫘', items:['Black beans','Butterbeans','Cannellini beans','Chickpeas','Kidney beans','Lentils'] },
+  nuts:    { color:'#B8964A', label:'Nuts & Seeds',      icon:'🥜', items:['Chia seeds','Hemp seeds','Pumpkin seeds','Sunflower seeds'] },
+  grain:   { color:'#B8A9E0', label:'Grains & Cereals',  icon:'🌾', items:['Barley','Bread','Couscous','Noodles','Oats','Pasta','Quinoa','Rice','Weet-Bix'] },
+  dairy:   { color:'#7EC8E3', label:'Dairy',             icon:'🧀', items:['Plain yoghurt','Cottage cheese','Goats cheese','Mozzarella','Ricotta'] },
+};
+
+const ALLERGENS = [
+  { name:"Cow's Milk", ex:"Yoghurt, soft cheese, ricotta, cow's milk on cereal" },
+  { name:"Eggs",       ex:"Well-cooked egg, omelette, frittata" },
+  { name:"Fish",       ex:"Salmon, tuna — avoid high-mercury fish e.g. shark" },
+  { name:"Shellfish",  ex:"Prawns, crab, oysters" },
+  { name:"Peanuts",    ex:"Smooth peanut butter, finely ground peanuts" },
+  { name:"Sesame",     ex:"Tahini, ground sesame seeds" },
+  { name:"Soy",        ex:"Silken tofu, calcium-fortified soy milk" },
+  { name:"Wheat",      ex:"Pasta, flour in baking, semolina, soft weet-bix" },
+  { name:"Tree Nuts", group:true },
+  { name:"Almond",     ex:"Smooth almond butter, finely ground almonds",       sub:true },
+  { name:"Brazil nut", ex:"Finely ground brazil nuts",                          sub:true },
+  { name:"Cashew",     ex:"Smooth cashew butter, finely ground cashews",        sub:true },
+  { name:"Hazelnut",   ex:"Smooth hazelnut butter, finely ground hazelnuts",    sub:true },
+  { name:"Macadamia",  ex:"Finely ground macadamia",                            sub:true },
+  { name:"Pecan",      ex:"Finely ground pecans",                               sub:true },
+  { name:"Pine nuts",  ex:"Finely ground pine nuts",                            sub:true },
+  { name:"Pistachio",  ex:"Finely ground pistachios",                           sub:true },
+  { name:"Walnut",     ex:"Finely ground walnuts",                              sub:true },
+];
+
+// ── State ─────────────────────────────────────────────────────────
+// remoteState = last snapshot from Firestore (source of truth)
+// localState  = working copy we render from
+let remoteState = {};
+let localState  = {};
+let saveTimer   = null;
+let initialised = false;
+
+function setSyncStatus(status, text) {
+  const badge = document.getElementById('syncBadge');
+  const label = document.getElementById('syncText');
+  badge.className = 'sync-badge ' + status;
+  label.textContent = text;
+}
+
+// Debounced save — waits 800ms after last change before writing to Firestore
+function scheduleSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    try {
+      await setDoc(DOC, localState);
+    } catch(e) {
+      setSyncStatus('error', 'Sync error');
+      console.error(e);
+    }
+  }, 800);
+}
+
+function setState(key, value) {
+  localState[key] = value;
+  scheduleSave();
+}
+
+// ── Real-time listener ────────────────────────────────────────────
+onSnapshot(DOC, (snap) => {
+  setSyncStatus('connected', 'Synced ✓');
+  if (snap.exists()) {
+    remoteState = snap.data();
+    // Merge remote into local (remote wins for keys we haven't changed locally)
+    localState = { ...remoteState };
+  } else {
+    remoteState = {};
+    localState  = {};
+  }
+  if (!initialised) {
+    initialised = true;
+    migrateData();
+    initUI();
+  } else {
+    // Live update: re-render all dots and counts without rebuilding DOM
+    refreshAllDots();
+    refreshAllNotes();
+    refreshName();
+  }
+}, (err) => {
+  setSyncStatus('error', 'Offline');
+  console.error(err);
+  if (!initialised) { initialised = true; migrateData(); initUI(); }
+});
+
+// ── Data migration (old protein__ keys -> new category keys) ──────
+function migrateData() {
+  const migrations = [
+    ['protein__Beef','meat__Beef'],['protein__Chicken','meat__Chicken'],
+    ['protein__Lamb','meat__Lamb'],['protein__Pork','meat__Pork'],
+    ['protein__Turkey','meat__Turkey'],['protein__Salmon','meat__Salmon'],
+    ['protein__Sardines','meat__Sardines'],['protein__Tuna','meat__Tuna'],
+    ['protein__White fish','meat__White fish'],
+    ['protein__Black beans','legume__Black beans'],['protein__Butterbeans','legume__Butterbeans'],
+    ['protein__Cannellini beans','legume__Cannellini beans'],['protein__Chickpeas','legume__Chickpeas'],
+    ['protein__Kidney beans','legume__Kidney beans'],['protein__Lentils','legume__Lentils'],
+    ['protein__Chia seeds','nuts__Chia seeds'],['protein__Hemp seeds','nuts__Hemp seeds'],
+    ['protein__Pumpkin seeds','nuts__Pumpkin seeds'],['protein__Sunflower seeds','nuts__Sunflower seeds'],
+    ['thumb__protein__Beef','thumb__meat__Beef'],['thumb__protein__Chicken','thumb__meat__Chicken'],
+    ['thumb__protein__Lamb','thumb__meat__Lamb'],['thumb__protein__Pork','thumb__meat__Pork'],
+    ['thumb__protein__Turkey','thumb__meat__Turkey'],['thumb__protein__Salmon','thumb__meat__Salmon'],
+    ['thumb__protein__Sardines','thumb__meat__Sardines'],['thumb__protein__Tuna','thumb__meat__Tuna'],
+    ['thumb__protein__White fish','thumb__meat__White fish'],
+    ['thumb__protein__Black beans','thumb__legume__Black beans'],
+    ['thumb__protein__Butterbeans','thumb__legume__Butterbeans'],
+    ['thumb__protein__Cannellini beans','thumb__legume__Cannellini beans'],
+    ['thumb__protein__Chickpeas','thumb__legume__Chickpeas'],
+    ['thumb__protein__Kidney beans','thumb__legume__Kidney beans'],
+    ['thumb__protein__Lentils','thumb__legume__Lentils'],
+    ['thumb__protein__Chia seeds','thumb__nuts__Chia seeds'],
+    ['thumb__protein__Hemp seeds','thumb__nuts__Hemp seeds'],
+    ['thumb__protein__Pumpkin seeds','thumb__nuts__Pumpkin seeds'],
+    ['thumb__protein__Sunflower seeds','thumb__nuts__Sunflower seeds'],
+  ];
+  let migrated = false;
+  migrations.forEach(([oldKey, newKey]) => {
+    if (localState[oldKey] !== undefined && localState[newKey] === undefined) {
+      localState[newKey] = localState[oldKey];
+      delete localState[oldKey];
+      migrated = true;
+    }
+  });
+  if (migrated) scheduleSave();
+}
+
+// ── Date helpers ─────────────────────────────────────────────────
+function todayStr() {
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function formatLast(dateStr) {
+  if (!dateStr) return null;
+  const today = todayStr();
+  if (dateStr === today) return 'Today';
+  const [ty,tm,td] = today.split('-').map(Number);
+  const [dy,dm,dd] = dateStr.split('-').map(Number);
+  const diff = Math.round((new Date(ty,tm-1,td) - new Date(dy,dm-1,dd)) / 86400000);
+  if (diff === 1) return 'Yesterday';
+  if (diff < 7)  return diff + ' days ago';
+  if (diff < 14) return '1 week ago';
+  return Math.floor(diff/7) + ' weeks ago';
+}
+
+// ── Food counter (Option B chevrons) ─────────────────────────────
+function makeCounter(k, color) {
+  const wrap = document.createElement('div');
+  wrap.className = 'counter-wrap';
+  wrap.id = 'cwrap__' + k.replace(/[^a-zA-Z0-9]/g,'_');
+  renderCounter(wrap, k, color);
+  return wrap;
+}
+function renderCounter(wrap, k, color) {
+  wrap.innerHTML = '';
+  const val = localState[k] || 0;
+  const counter = document.createElement('div');
+  counter.className = 'counter';
+  const minus = document.createElement('button');
+  minus.type = 'button';
+  minus.className = 'cbtn minus' + (val > 0 ? ' has-val' : '');
+  minus.textContent = '‹';
+  minus.style.setProperty('--dc-color', color);
+  minus.onclick = (e) => { e.stopPropagation(); adjustFood(k, color, -1); };
+  const valEl = document.createElement('span');
+  valEl.className = 'cval' + (val === 0 ? ' zero' : '');
+  valEl.textContent = val;
+  const plus = document.createElement('button');
+  plus.type = 'button';
+  plus.className = 'cbtn plus';
+  plus.style.setProperty('--dc-color', color);
+  plus.textContent = '›';
+  plus.onclick = (e) => { e.stopPropagation(); adjustFood(k, color, 1); };
+  counter.appendChild(minus); counter.appendChild(valEl); counter.appendChild(plus);
+  const lbl = document.createElement('span');
+  lbl.className = 'clabel';
+  lbl.textContent = 'exposures';
+  wrap.appendChild(counter); wrap.appendChild(lbl);
+}
+function adjustFood(k, color, delta) {
+  const newVal = Math.max(0, (localState[k] || 0) + delta);
+  setState(k, newVal);
+  const wrap = document.getElementById('cwrap__' + k.replace(/[^a-zA-Z0-9]/g,'_'));
+  if (wrap) renderCounter(wrap, k, color);
+  const fi = document.getElementById('fi__' + k.replace(/[^a-zA-Z0-9]/g,'_'));
+  if (fi) fi.classList.toggle('tried', newVal > 0);
+  updateCnt(k.split('__')[0]);
+}
+
+function refreshAllDots() {
+  Object.keys(FOODS).forEach(sec => {
+    const { color, items } = FOODS[sec];
+    items.forEach(food => {
+      const k = sec+'__'+food;
+      const wrap = document.getElementById('cwrap__' + k.replace(/[^a-zA-Z0-9]/g,'_'));
+      if (wrap) renderCounter(wrap, k, color);
+      const fi = document.getElementById('fi__' + k.replace(/[^a-zA-Z0-9]/g,'_'));
+      if (fi) fi.classList.toggle('tried', (localState[k]||0) > 0);
+      const tk = 'thumb__'+k;
+      const tw = document.getElementById('thumbs__' + k.replace(/[^a-zA-Z0-9]/g,'_'));
+      if (tw) renderThumbs(tw, tk);
+    });
+    updateCnt(sec);
+  });
+  // Allergen counters + last date
+  ALLERGENS.filter(a => !a.group).forEach(a => {
+    const k = 'al__'+a.name;
+    const wrap = document.getElementById('cwrap__' + k.replace(/[^a-zA-Z0-9]/g,'_'));
+    if (wrap) renderAllergenCounter(wrap, k);
+    const lk = 'last__'+a.name;
+    const lastEl = document.getElementById('last__'+a.name.replace(/[^a-zA-Z0-9]/g,'_'));
+    if (lastEl) {
+      const fmt = formatLast(localState[lk]);
+      lastEl.textContent = fmt || 'never';
+      lastEl.className = 'last-exp' + (fmt ? '' : ' empty');
+    }
+  });
+}
+
+function refreshAllNotes() {
+  ALLERGENS.filter(a => !a.group).forEach(a => {
+    const nk = 'aln__'+a.name;
+    const el = document.getElementById('anote__'+a.name.replace(/[^a-zA-Z0-9]/g,'_'));
+    if (el && document.activeElement !== el) el.value = localState[nk] || '';
+  });
+  ['Reactions noticed','Foods refused','Favourite so far','Foods to retry','Texture notes','Mealtime wins','Questions for doctor','Other notes'].forEach((_,i) => {
+    const el = document.getElementById('gn__'+i);
+    if (el && document.activeElement !== el) el.value = localState['gn'+i] || '';
+  });
+}
+
+function refreshName() {
+  const el = document.getElementById('babyName');
+  if (el && document.activeElement !== el) el.value = localState.bname || '';
+}
+
+// ── Food sections ─────────────────────────────────────────────────
+function makeThumbs(k) {
+  const tk = 'thumb__'+k;
+  const wrap = document.createElement('div');
+  wrap.className = 'thumbs';
+  wrap.id = 'thumbs__' + k.replace(/[^a-zA-Z0-9]/g,'_');
+  renderThumbs(wrap, tk);
+  return wrap;
+}
+
+function renderThumbs(wrap, tk) {
+  wrap.innerHTML = '';
+  const val = localState[tk] || null; // 'up', 'down', or null
+  ['👍','👎'].forEach(emoji => {
+    const btn = document.createElement('span');
+    btn.className = 'thumb' + ((emoji==='👍'&&val==='up')||(emoji==='👎'&&val==='down') ? ' on' : '');
+    btn.textContent = emoji;
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      const cur = localState[tk] || null;
+      const next = (emoji==='👍' && cur==='up') || (emoji==='👎' && cur==='down') ? null : (emoji==='👍' ? 'up' : 'down');
+      setState(tk, next);
+      const w = document.getElementById('thumbs__' + tk.replace('thumb__','').replace(/[^a-zA-Z0-9]/g,'_'));
+      if (w) renderThumbs(w, tk);
+    };
+    wrap.appendChild(btn);
+  });
+}
+
+function buildFoodItem(sec, food) {
+  const k = sec+'__'+food;
+  const { color } = FOODS[sec];
+  const fi = document.createElement('div');
+  fi.className = 'fi' + ((localState[k]||0) > 0 ? ' tried' : '');
+  fi.id = 'fi__' + k.replace(/[^a-zA-Z0-9]/g,'_');
+  const left = document.createElement('div');
+  left.className = 'fi-left';
+  left.appendChild(makeThumbs(k));
+  const nm = document.createElement('span');
+  nm.className = 'fn';
+  nm.textContent = food;
+  left.appendChild(nm);
+  // Nutrition tag
+  const tag = TAGS[food];
+  if (tag && TAG_COLORS[tag]) {
+    const pill = document.createElement('span');
+    pill.className = 'tag-nut';
+    pill.textContent = tag;
+    pill.style.background = TAG_COLORS[tag].bg;
+    pill.style.color = TAG_COLORS[tag].color;
+    left.appendChild(pill);
+  }
+  fi.appendChild(left);
+  fi.appendChild(makeCounter(k, color));
+  return fi;
+}
+
+function renderSec(sec) {
+  const g = document.getElementById('g-'+sec);
+  g.innerHTML = '';
+  FOODS[sec].items.sort((a,b) => a.localeCompare(b));
+  FOODS[sec].items.forEach(f => g.appendChild(buildFoodItem(sec, f)));
+  updateCnt(sec);
+}
+
+function updateCnt(sec) {
+  const el = document.getElementById('cnt-'+sec);
+  if (!el) return;
+  const n = Object.keys(localState).filter(k => k.startsWith(sec+'__') && (localState[k]||0) > 0).length;
+  el.textContent = n + ' tried';
+}
+
+window.addFood = function(sec) {
+  const name = prompt('Enter food name:');
+  if (!name || !name.trim()) return;
+  const food = name.trim();
+  if (FOODS[sec].items.includes(food)) return;
+  FOODS[sec].items.push(food);
+  // Persist custom food list
+  const ck = 'custom__'+sec;
+  const existing = localState[ck] ? JSON.parse(localState[ck]) : [];
+  existing.push(food);
+  setState(ck, JSON.stringify(existing));
+  renderSec(sec);
+};
+
+// Restore custom foods added by user
+function restoreCustomFoods() {
+  Object.keys(FOODS).forEach(sec => {
+    const ck = 'custom__'+sec;
+    if (localState[ck]) {
+      const extras = JSON.parse(localState[ck]);
+      extras.forEach(f => { if (!FOODS[sec].items.includes(f)) FOODS[sec].items.push(f); });
+    }
+  });
+}
+
+// ── Allergen counter ─────────────────────────────────────────────
+function makeAllergenCounter(k) {
+  const wrap = document.createElement('div');
+  wrap.className = 'a-dots-wrap';
+  wrap.id = 'cwrap__' + k.replace(/[^a-zA-Z0-9]/g,'_');
+  renderAllergenCounter(wrap, k);
+  return wrap;
+}
+function renderAllergenCounter(wrap, k) {
+  const lk = 'last__' + k.replace('al__','');
+  wrap.innerHTML = '';
+  const val = localState[k] || 0;
+  const counter = document.createElement('div');
+  counter.className = 'counter';
+  const minus = document.createElement('button');
+  minus.type = 'button';
+  minus.className = 'cbtn minus' + (val > 0 ? ' has-val' : '');
+  minus.textContent = '‹';
+  minus.style.setProperty('--dc-color','#E07A8C');
+  minus.onclick = (e) => { e.stopPropagation(); adjustAllergen(k, -1); };
+  const valEl = document.createElement('span');
+  valEl.className = 'cval' + (val === 0 ? ' zero' : '');
+  valEl.textContent = val;
+  const plus = document.createElement('button');
+  plus.type = 'button';
+  plus.className = 'cbtn plus';
+  plus.style.setProperty('--dc-color','#E07A8C');
+  plus.textContent = '›';
+  plus.onclick = (e) => { e.stopPropagation(); adjustAllergen(k, 1); };
+  counter.appendChild(minus); counter.appendChild(valEl); counter.appendChild(plus);
+  const lbl = document.createElement('span');
+  lbl.className = 'clabel';
+  lbl.textContent = 'exposures';
+  // Last date badge
+  const lastEl = document.createElement('span');
+  const aName = k.replace('al__','');
+  lastEl.id = 'last__' + aName.replace(/[^a-zA-Z0-9]/g,'_');
+  const fmt = formatLast(localState[lk]);
+  lastEl.textContent = fmt || 'never';
+  lastEl.className = 'last-exp' + (fmt ? '' : ' empty');
+  wrap.appendChild(counter); wrap.appendChild(lbl); wrap.appendChild(lastEl);
+}
+function adjustAllergen(k, delta) {
+  const newVal = Math.max(0, (localState[k] || 0) + delta);
+  setState(k, newVal);
+  if (delta > 0) setState('last__' + k.replace('al__',''), todayStr());
+  if (newVal === 0) setState('last__' + k.replace('al__',''), null);
+  const wrap = document.getElementById('cwrap__' + k.replace(/[^a-zA-Z0-9]/g,'_'));
+  if (wrap) renderAllergenCounter(wrap, k);
+}
+
+// ── Allergens ─────────────────────────────────────────────────────
+function renderAllergens() {
+  const list = document.getElementById('a-list');
+  list.innerHTML = '';
+  ALLERGENS.forEach(a => {
+    const row = document.createElement('div');
+    if (a.group) {
+      row.className = 'a-row group';
+      row.innerHTML = '<span class="a-name">🌳 '+a.name+' — introduce each nut separately</span>';
+    } else {
+      row.className = 'a-row' + (a.sub ? ' sub' : '');
+      const k  = 'al__'+a.name;
+      const nk = 'aln__'+a.name;
+      const col1 = document.createElement('div');
+      col1.innerHTML = '<div class="a-name">'+a.name+'</div><div class="a-ex">'+a.ex+'</div>';
+      const col2 = makeAllergenCounter(k);
+      const col3 = document.createElement('div');
+      const inp = document.createElement('input');
+      inp.type = 'text'; inp.className = 'a-note'; inp.placeholder = 'Notes…';
+      inp.id = 'anote__'+a.name.replace(/[^a-zA-Z0-9]/g,'_');
+      inp.value = localState[nk] || '';
+      inp.oninput = () => setState(nk, inp.value);
+      col3.appendChild(inp);
+      row.appendChild(col1); row.appendChild(col2); row.appendChild(col3);
+    }
+    list.appendChild(row);
+  });
+}
+
+// ── General notes ─────────────────────────────────────────────────
+function renderNotes() {
+  const g = document.getElementById('notesgrid');
+  ['Reactions noticed','Foods refused','Favourite so far','Foods to retry','Texture notes','Mealtime wins','Questions for doctor','Other notes'].forEach((lbl, i) => {
+    const wrap = document.createElement('div'); wrap.className = 'nf';
+    const l = document.createElement('label'); l.className = 'nl'; l.textContent = lbl;
+    const inp = document.createElement('input'); inp.className = 'ni'; inp.type = 'text'; inp.placeholder = '…';
+    inp.id = 'gn__'+i;
+    inp.value = localState['gn'+i] || '';
+    inp.oninput = () => setState('gn'+i, inp.value);
+    wrap.appendChild(l); wrap.appendChild(inp); g.appendChild(wrap);
+  });
+}
+
+// ── Baby name ─────────────────────────────────────────────────────
+function initName() {
+  const el = document.getElementById('babyName');
+  el.value = localState.bname || '';
+  el.oninput = () => setState('bname', el.value);
+}
+
+// ── Init UI (called once after first Firestore snapshot) ──────────
+function initUI() {
+  restoreCustomFoods();
+  Object.keys(FOODS).forEach(renderSec);
+  renderAllergens();
+  renderNotes();
+  initName();
+}
+
+// ── Collapsible sections ──────────────────────────────────────────
+window.toggleCard = function(id) {
+  const card = document.getElementById('card-'+id);
+  if (card) card.classList.toggle('collapsed');
+};
+
+</script>
+</body>
+</html>
