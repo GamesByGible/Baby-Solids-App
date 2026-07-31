@@ -1,0 +1,2055 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Baby's First Foods Tracker</title>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Food Tracker">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --sun:#F9C22E; --sun-dark:#E8A800;
+    --blush:#F7856E; --mint:#5BBFA3; --sky:#7EC8E3;
+    --lavender:#B8A9E0; --berry:#E07A8C;
+    --cream:#FFFDF5; --paper:#FFF9EE;
+    --ink:#3D2C1E; --muted:#8C7A6B; --dot-empty:#E8DDD0;
+    --radius:16px;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Quicksand',sans-serif; background:var(--cream); color:var(--ink); }
+
+  header { background:var(--sun); padding:26px 20px 54px; position:relative; overflow:hidden; }
+  header::after { content:''; position:absolute; bottom:-2px; left:0; right:0; height:36px; background:var(--cream); border-radius:50% 50% 0 0/100% 100% 0 0; }
+  .hinner { max-width:960px; margin:0 auto; position:relative; z-index:1; }
+  .badge { display:inline-block; background:rgba(255,255,255,.35); font-family:'Nunito',sans-serif; font-size:10px; font-weight:800; letter-spacing:2px; text-transform:uppercase; padding:3px 11px; border-radius:20px; margin-bottom:8px; }
+  h1 { font-family:'Nunito',sans-serif; font-size:clamp(24px,5vw,40px); font-weight:900; color:var(--ink); line-height:1.1; }
+  h1 span { color:#fff; -webkit-text-stroke:1.5px var(--sun-dark); }
+  header p { margin-top:6px; font-size:12px; color:var(--ink); opacity:.7; }
+  .hdeco { position:absolute; right:10px; top:8px; font-size:56px; opacity:.15; pointer-events:none; }
+
+  /* SYNC BADGE */
+  .sync-bar { max-width:960px; margin:0 auto; padding:8px 14px 0; display:flex; justify-content:flex-end; }
+  .sync-badge { display:inline-flex; align-items:center; gap:5px; font-family:'Nunito',sans-serif; font-size:11px; font-weight:700; padding:4px 10px; border-radius:20px; }
+  .sync-badge.connecting { background:#FFF3CD; color:#856404; }
+  .sync-badge.connected  { background:#D1FAE5; color:#065F46; }
+  .sync-badge.error      { background:#FEE2E2; color:#991B1B; }
+  .sync-dot { width:7px; height:7px; border-radius:50%; }
+  .sync-badge.connecting .sync-dot { background:#FFC107; animation:pulse 1s infinite; }
+  .sync-badge.connected  .sync-dot { background:#10B981; }
+  .sync-badge.error      .sync-dot { background:#EF4444; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  .namebar { max-width:960px; margin:8px auto 0; padding:0 14px; position:relative; z-index:2; }
+  .namewrap { background:#fff; border-radius:13px; padding:11px 18px; display:flex; align-items:center; gap:10px; box-shadow:0 4px 18px rgba(0,0,0,.08); border:2px solid transparent; }
+  .namewrap:focus-within { border-color:var(--sun); }
+  .namelbl { font-family:'Nunito',sans-serif; font-weight:800; font-size:12px; color:var(--muted); white-space:nowrap; }
+  .nameinp { border:none; outline:none; font-family:'Nunito',sans-serif; font-size:16px; font-weight:800; color:var(--ink); flex:1; background:transparent; }
+  .nameinp::placeholder { color:var(--dot-empty); }
+
+  main { max-width:960px; margin:16px auto; padding:0 14px; display:grid; gap:14px; }
+
+  .card { background:#fff; border-radius:var(--radius); overflow:hidden; box-shadow:0 2px 14px rgba(0,0,0,.06); }
+  .card.collapsed .card-body { display:none; }
+  .cardhead { padding:14px 18px; display:flex; align-items:center; gap:9px; cursor:pointer; -webkit-tap-highlight-color:transparent; touch-action:manipulation; width:100%; border:none; text-align:left; font-family:inherit; }
+  .chevron { margin-left:6px; font-size:14px; color:rgba(255,255,255,.8); transition:transform .25s; flex-shrink:0; }
+  .card.collapsed .chevron { transform:rotate(-90deg); }
+  .cardhead .icon { font-size:20px; }
+  .cardhead .title { font-family:'Nunito',sans-serif; font-size:13px; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; color:#fff; }
+  .cardhead .cnt { margin-left:auto; background:rgba(255,255,255,.3); color:#fff; font-family:'Nunito',sans-serif; font-size:11px; font-weight:700; padding:2px 8px; border-radius:10px; }
+  .h-veg{background:#5BBFA3} .h-fruit{background:#F7856E} .h-meat{background:#E07A8C}
+  .h-legume{background:#D4845A} .h-nuts{background:#B8964A} .h-grain{background:#B8A9E0}
+  .h-dairy{background:#7EC8E3} .h-allergen{background:#E07A8C} .h-notes{background:#C5B8E8}
+  /* nutrition tag pill */
+  .tag-nut { font-family:'Nunito',sans-serif; font-size:9px; font-weight:800; letter-spacing:.3px; padding:2px 6px; border-radius:20px; white-space:nowrap; flex-shrink:0; }
+
+  .foodgrid { padding:14px; display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:8px; }
+  .fi { display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border-radius:11px; background:var(--paper); transition:background .2s; gap:6px; }
+  .fi.tried { background:#F0FDF8; }
+  .fi.tried .fn { font-weight:700; }
+  .fi-left { display:flex; align-items:center; gap:6px; flex:1; min-width:0; }
+  .fn { font-size:14px; font-weight:600; color:var(--ink); }
+
+  /* food counter */
+  .counter-wrap { display:flex; flex-direction:column; align-items:center; gap:2px; flex-shrink:0; }
+  .counter { display:flex; align-items:center; gap:1px; }
+  .cbtn { background:none; border:none; cursor:pointer; font-size:22px; font-weight:900; line-height:1; padding:2px 3px; -webkit-tap-highlight-color:transparent; touch-action:manipulation; transition:transform .1s,opacity .15s; flex-shrink:0; }
+  .cbtn:active { transform:scale(.85); }
+  .cbtn.minus { color:var(--dot-empty); }
+  .cbtn.minus.has-val { color:var(--muted); }
+  .cbtn.plus { color:var(--dc-color, var(--mint)); }
+  .cval { font-family:'Nunito',sans-serif; font-size:16px; font-weight:900; color:var(--ink); min-width:22px; text-align:center; line-height:1; }
+  .cval.zero { color:var(--dot-empty); }
+  .clabel { font-size:9px; font-weight:700; color:var(--muted); letter-spacing:.5px; text-transform:uppercase; }
+  /* allergen last-exposure badge */
+  .last-exp { font-size:10px; font-weight:700; color:var(--berry); background:#FFE8ED; border-radius:6px; padding:2px 6px; text-align:center; white-space:nowrap; }
+  .last-exp.empty { color:var(--dot-empty); background:none; font-weight:600; font-size:10px; }
+
+  .thumbs { display:flex; gap:2px; flex-shrink:0; }
+  .thumb { font-size:18px; line-height:1; cursor:pointer; opacity:0.2; transition:opacity .15s, transform .1s; user-select:none; padding:2px; }
+  .thumb:hover { transform:scale(1.2); }
+  .thumb.on { opacity:1; }
+
+  .addbtn-wrap { padding:4px 12px 11px; }
+  .addbtn { font-family:'Nunito',sans-serif; font-size:13px; font-weight:700; color:var(--muted); background:none; border:2px dashed var(--dot-empty); padding:9px 12px; border-radius:8px; cursor:pointer; width:100%; }
+  .addbtn:hover { border-color:var(--sun); color:var(--ink); }
+
+  .a-info-box { margin:0 14px 10px; background:#FFF0EC; border-left:3px solid var(--berry); border-radius:8px; padding:8px 12px; font-size:11px; color:var(--muted); line-height:1.6; }
+  .a-col-heads { display:grid; grid-template-columns:1fr 110px 1fr; gap:8px; padding:4px 14px 6px; border-bottom:2px solid var(--dot-empty); }
+  .a-col-head { font-family:'Nunito',sans-serif; font-size:9px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:var(--muted); }
+  .a-col-head.center { text-align:center; }
+  .a-list { padding:6px 14px 14px; display:flex; flex-direction:column; gap:5px; }
+  .a-row { display:grid; grid-template-columns:1fr 110px 1fr; gap:8px; align-items:center; padding:10px 12px; border-radius:9px; background:var(--paper); }
+  .a-row.sub { background:#FFFAF8; padding-left:22px; }
+  .a-row.group { background:#FFF0EC; grid-template-columns:1fr; padding:6px 10px; }
+  .a-name { font-family:'Nunito',sans-serif; font-size:13px; font-weight:800; color:var(--ink); }
+  .a-row.sub .a-name { font-size:11.5px; font-weight:700; color:var(--muted); }
+  .a-row.group .a-name { font-size:12px; color:var(--berry); }
+  .a-ex { font-size:11px; color:var(--muted); line-height:1.4; margin-top:1px; }
+  .a-dots-wrap { display:flex; flex-direction:column; align-items:center; gap:3px; justify-content:center; }
+  .a-note-btn { background:none; border:none; cursor:pointer; font-size:18px; padding:4px; opacity:.2; transition:opacity .15s, transform .1s; -webkit-tap-highlight-color:transparent; touch-action:manipulation; display:block; margin:0 auto; }
+  .a-note-btn:active { transform:scale(.88); }
+  .a-note-btn.has-notes { opacity:1; }
+  /* notes modal */
+  .notes-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:300; display:flex; align-items:flex-end; justify-content:center; }
+  .notes-modal-overlay.hidden { display:none; }
+  .notes-modal { background:#fff; border-radius:20px 20px 0 0; padding:24px 20px 40px; width:100%; max-width:600px; }
+  .notes-modal h3 { font-family:'Nunito',sans-serif; font-size:18px; font-weight:900; color:var(--ink); margin-bottom:4px; }
+  .notes-modal-sub { font-size:12px; color:var(--muted); margin-bottom:14px; }
+  .notes-textarea { width:100%; border:2px solid var(--dot-empty); border-radius:10px; padding:12px 14px; font-family:'Quicksand',sans-serif; font-size:15px; color:var(--ink); background:#fff; outline:none; resize:none; height:160px; line-height:1.6; }
+  .notes-textarea:focus { border-color:var(--berry); }
+  .notes-modal-actions { display:flex; gap:10px; margin-top:14px; }
+  .notes-modal-save   { flex:1; background:var(--berry); color:#fff; font-family:'Nunito',sans-serif; font-weight:800; font-size:15px; border:none; border-radius:12px; padding:13px; cursor:pointer; }
+  .notes-modal-cancel { background:var(--paper); color:var(--muted); font-family:'Nunito',sans-serif; font-weight:700; font-size:15px; border:none; border-radius:12px; padding:13px 18px; cursor:pointer; }
+
+  .notesgrid { padding:12px; display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  @media(max-width:480px){ .notesgrid{grid-template-columns:1fr} }
+  .nf { display:flex; flex-direction:column; gap:3px; }
+  .nl { font-size:9px; font-weight:700; color:var(--muted); letter-spacing:.5px; text-transform:uppercase; }
+  .ni { border:none; border-bottom:2px solid var(--dot-empty); padding:7px 2px; font-family:'Quicksand',sans-serif; font-size:14px; color:var(--ink); background:transparent; outline:none; width:100%; }
+  .ni:focus { border-color:var(--sun); }
+
+  .printbtn { display:block; margin:0 auto 16px; padding:10px 24px; background:var(--sun); color:var(--ink); font-family:'Nunito',sans-serif; font-weight:800; font-size:13px; border:none; border-radius:30px; cursor:pointer; box-shadow:0 4px 12px rgba(249,194,46,.4); }
+  .printbtn:hover { transform:translateY(-1px); }
+  footer { text-align:center; padding:8px 14px 32px; font-size:10.5px; color:var(--muted); line-height:1.7; }
+  footer strong { color:var(--ink); }
+
+  /* ── BOTTOM NAV ── */
+  .bottom-nav { position:fixed; bottom:0; left:0; right:0; background:#fff; border-top:1.5px solid var(--dot-empty); display:flex; z-index:100; box-shadow:0 -2px 12px rgba(0,0,0,.07); }
+  .nav-btn { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px 0 12px; border:none; background:none; cursor:pointer; gap:3px; -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
+  .nav-btn .nav-icon { font-size:22px; line-height:1; }
+  .nav-btn .nav-label { font-family:'Nunito',sans-serif; font-size:10px; font-weight:800; letter-spacing:.5px; text-transform:uppercase; color:var(--muted); transition:color .15s; }
+  .nav-btn.active .nav-label { color:var(--mint); }
+  .nav-btn.active .nav-icon { filter:drop-shadow(0 0 4px rgba(91,191,163,.4)); }
+  body { padding-bottom:70px; }
+
+  /* ── INVENTORY PAGE ── */
+  #page-inventory { display:none; }
+  #page-tracker   { display:block; }
+
+  .inv-header { background:var(--mint); border-radius:var(--radius); padding:18px 20px; display:flex; align-items:center; justify-content:space-between; box-shadow:0 2px 14px rgba(0,0,0,.06); }
+  .inv-header-left h2 { font-family:'Nunito',sans-serif; font-size:18px; font-weight:900; color:#fff; }
+  .inv-header-left p  { font-size:12px; color:rgba(255,255,255,.8); margin-top:2px; }
+  .inv-add-btn { background:#fff; color:var(--mint); font-family:'Nunito',sans-serif; font-size:13px; font-weight:800; border:none; border-radius:10px; padding:9px 16px; cursor:pointer; -webkit-tap-highlight-color:transparent; touch-action:manipulation; white-space:nowrap; }
+
+  .inv-empty { text-align:center; padding:48px 20px; color:var(--muted); }
+  .inv-empty .inv-empty-icon { font-size:48px; display:block; margin-bottom:12px; }
+  .inv-empty p { font-size:14px; line-height:1.6; }
+
+  .inv-list { display:flex; flex-direction:column; gap:8px; }
+
+  /* 5-column tile grid */
+  .inv-item {
+    background:#fff; border-radius:14px; padding:12px 14px;
+    box-shadow:0 2px 10px rgba(0,0,0,.06);
+    display:grid;
+    grid-template-columns: minmax(0,3fr) minmax(0,2.5fr) 48px 72px 28px;
+    align-items:center;
+    gap:6px;
+  }
+  .inv-col-name { font-family:'Nunito',sans-serif; font-size:13px; font-weight:800; color:var(--ink); white-space:normal; word-break:break-word; line-height:1.3; }
+  .inv-col-ings { display:flex; flex-wrap:wrap; gap:3px; align-content:flex-start; }
+  .inv-ingredient-pill { font-family:'Nunito',sans-serif; font-size:8px; font-weight:800; padding:2px 5px; border-radius:20px; background:#F0F0EE; color:var(--muted); white-space:nowrap; }
+  .inv-col-date { font-family:'Nunito',sans-serif; font-size:9px; font-weight:700; color:#C07020; text-align:center; line-height:1.4; word-break:break-all; }
+  .inv-col-qty { display:flex; align-items:center; justify-content:center; gap:1px; }
+  .inv-cbtn { background:none; border:none; cursor:pointer; font-size:18px; font-weight:900; line-height:1; padding:1px; -webkit-tap-highlight-color:transparent; touch-action:manipulation; transition:transform .1s; }
+  .inv-cbtn:active { transform:scale(.85); }
+  .inv-cbtn.plus { color:var(--mint); }
+  .inv-cbtn.disabled { color:var(--dot-empty); }
+  .inv-qty-wrap { display:flex; flex-direction:column; align-items:center; }
+  .inv-count { font-family:'Nunito',sans-serif; font-size:14px; font-weight:900; color:var(--ink); min-width:16px; text-align:center; line-height:1; }
+  .inv-unit { font-size:8px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; }
+  .inv-edit-btn { background:none; border:none; font-size:15px; cursor:pointer; opacity:.35; padding:2px; -webkit-tap-highlight-color:transparent; transition:opacity .15s; }
+  .inv-edit-btn:hover { opacity:.8; }
+  .inv-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:200; display:flex; align-items:flex-end; justify-content:center; }
+  .inv-modal-overlay.hidden { display:none; }
+  .inv-modal { background:#fff; border-radius:20px 20px 0 0; padding:24px 20px 40px; width:100%; max-width:600px; max-height:90vh; overflow-y:auto; }
+  .inv-modal h3 { font-family:'Nunito',sans-serif; font-size:18px; font-weight:900; color:var(--ink); margin-bottom:16px; }
+  .inv-ingredient-results { margin-top:4px; display:flex; flex-direction:column; gap:3px; max-height:150px; overflow-y:auto; }
+  .inv-ingredient-result { padding:8px 12px; border-radius:8px; background:var(--paper); font-size:13px; font-weight:600; color:var(--ink); cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  .inv-ingredient-result:hover { background:#E8F8F3; color:var(--mint); }
+  .inv-ingredient-chips { display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; min-height:28px; }
+  .inv-chip { display:inline-flex; align-items:center; gap:4px; background:#E8F8F3; color:var(--mint); font-family:'Nunito',sans-serif; font-size:11px; font-weight:800; padding:3px 9px; border-radius:20px; }
+  .inv-chip-remove { background:none; border:none; cursor:pointer; font-size:13px; line-height:1; color:var(--mint); padding:0; opacity:.6; }
+  .inv-chip-remove:hover { opacity:1; }
+  .inv-modal-actions { display:flex; gap:10px; margin-top:18px; }
+  .inv-modal-save   { flex:1; background:var(--mint); color:#fff; font-family:'Nunito',sans-serif; font-weight:800; font-size:15px; border:none; border-radius:12px; padding:13px; cursor:pointer; }
+  .inv-modal-delete { background:#FFE8ED; color:#C0415A; font-family:'Nunito',sans-serif; font-weight:800; font-size:15px; border:none; border-radius:12px; padding:13px 18px; cursor:pointer; }
+
+  /* ── MEAL PLAN PAGE ── */
+  #page-mealplan { display:none; }
+
+  .mp-header { background:var(--lavender); border-radius:var(--radius); padding:18px 20px; display:flex; align-items:center; justify-content:space-between; box-shadow:0 2px 14px rgba(0,0,0,.06); }
+  .mp-header-left h2 { font-family:'Nunito',sans-serif; font-size:18px; font-weight:900; color:#fff; }
+  .mp-header-left p  { font-size:12px; color:rgba(255,255,255,.85); margin-top:2px; }
+  .mp-header-actions { display:flex; align-items:center; gap:8px; }
+  .mp-settings-btn { background:rgba(255,255,255,.25); color:#fff; font-size:16px; border:none; border-radius:10px; width:38px; height:38px; display:flex; align-items:center; justify-content:center; cursor:pointer; -webkit-tap-highlight-color:transparent; touch-action:manipulation; flex-shrink:0; }
+  .mp-add-btn { background:#fff; color:var(--lavender); font-family:'Nunito',sans-serif; font-size:13px; font-weight:800; border:none; border-radius:10px; padding:9px 16px; cursor:pointer; -webkit-tap-highlight-color:transparent; touch-action:manipulation; white-space:nowrap; }
+
+  .mp-settings-intro { font-size:12px; color:var(--muted); line-height:1.5; margin-bottom:14px; }
+  #mp-settings-list { max-height:320px; overflow-y:auto; }
+  .mp-settings-row { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:10px 2px; border-bottom:1px solid var(--paper); }
+  .mp-settings-row:last-child { border-bottom:none; }
+  .mp-settings-name { font-size:13px; font-weight:700; color:var(--ink); flex:1; min-width:0; word-break:break-word; }
+  .mp-settings-del { background:none; border:none; font-size:16px; cursor:pointer; padding:4px 8px; flex-shrink:0; -webkit-tap-highlight-color:transparent; }
+  .mp-settings-empty { font-size:12px; color:var(--muted); padding:16px 2px; text-align:center; line-height:1.5; }
+
+  .mp-import-textarea { height:180px; }
+  .mp-import-hint { font-size:11px; color:var(--muted); line-height:1.5; margin-top:6px; }
+  #mp-import-preview { margin-top:12px; }
+  .mp-import-day { display:flex; align-items:center; gap:6px; padding:6px 2px; font-size:12px; font-weight:700; color:var(--ink); }
+  .mp-import-day-icon { color:var(--mint); flex-shrink:0; }
+  .mp-import-error { display:flex; align-items:flex-start; gap:6px; padding:6px 2px; font-size:12px; font-weight:600; color:#C43D52; line-height:1.4; }
+  .mp-import-error-icon { flex-shrink:0; }
+  .mp-import-empty { font-size:12px; color:var(--muted); padding:6px 2px; }
+
+  .mp-empty { text-align:center; padding:48px 20px; color:var(--muted); }
+  .mp-empty .mp-empty-icon { font-size:48px; display:block; margin-bottom:12px; }
+  .mp-empty p { font-size:14px; line-height:1.6; }
+
+  .mp-list { display:flex; flex-direction:column; gap:12px; margin-top:14px; }
+
+  .mp-week { background:#fff; border-radius:var(--radius); overflow:hidden; box-shadow:0 2px 14px rgba(0,0,0,.06); }
+  .mp-week-head { width:100%; padding:14px 18px; display:flex; align-items:center; gap:9px; cursor:pointer; border:none; background:var(--lavender); text-align:left; font-family:inherit; -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
+  .mp-week-title { font-family:'Nunito',sans-serif; font-size:13px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:#fff; display:flex; flex-direction:column; gap:1px; }
+  .mp-week-dates { font-size:10px; font-weight:700; letter-spacing:.5px; text-transform:none; color:rgba(255,255,255,.85); }
+  .mp-count { margin-left:auto; background:rgba(255,255,255,.3); color:#fff; font-family:'Nunito',sans-serif; font-size:11px; font-weight:700; padding:2px 8px; border-radius:10px; flex-shrink:0; }
+  .mp-chevron { font-size:14px; color:rgba(255,255,255,.85); transition:transform .25s; flex-shrink:0; }
+  .mp-week.collapsed .mp-chevron { transform:rotate(-90deg); }
+  .mp-week.collapsed .mp-week-body { display:none; }
+  .mp-week-body { padding:10px; display:flex; flex-direction:column; gap:8px; }
+
+  .mp-day { background:var(--paper); border-radius:12px; overflow:hidden; }
+  .mp-day-head { width:100%; padding:10px 14px; display:flex; align-items:center; gap:8px; cursor:pointer; border:none; background:none; text-align:left; font-family:inherit; -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
+  .mp-day-title { font-family:'Nunito',sans-serif; font-size:12px; font-weight:800; color:var(--ink); display:flex; align-items:center; gap:6px; }
+  .mp-day-date { font-size:10px; font-weight:700; color:var(--muted); }
+  .mp-today-badge { background:var(--lavender); color:#fff; font-size:9px; font-weight:800; letter-spacing:.5px; text-transform:uppercase; padding:2px 6px; border-radius:8px; }
+  .mp-day .mp-count { background:#EDE8FA; color:#8570C0; }
+  .mp-day .mp-chevron { color:var(--muted); }
+  .mp-day.collapsed .mp-chevron { transform:rotate(-90deg); }
+  .mp-day.collapsed .mp-day-body { display:none; }
+  .mp-day-body { padding:0 12px 12px; display:flex; flex-direction:column; gap:8px; }
+
+  .mp-day-empty { font-size:12px; color:var(--muted); padding:4px 2px; }
+
+  .mp-summary { background:#F3EEFB; border:1px dashed #C9B4EA; }
+  .mp-summary .mp-day-title { color:#7A5FB0; }
+  .mp-summary .mp-count { background:#E4D8F5; color:#7A5FB0; }
+  .mp-summary-body { padding:0 12px 12px; display:flex; flex-direction:column; }
+  .mp-summary-row { display:flex; align-items:center; gap:8px; padding:6px 2px; border-bottom:1px solid #E9E0F7; }
+  .mp-summary-row:last-child { border-bottom:none; }
+  .mp-summary-row.insufficient { background:#FDECEE; margin:0 -8px; padding:6px 8px; border-radius:6px; border-bottom-color:transparent; }
+  .mp-summary-ing { flex:1; min-width:0; word-break:break-word; font-size:12px; font-weight:700; color:var(--ink); }
+  .mp-summary-count { font-family:'Nunito',sans-serif; font-size:12px; font-weight:800; color:#7A5FB0; flex-shrink:0; }
+  .mp-summary-count.insufficient { color:#C43D52; }
+  .mp-compare-btn { font-family:'Nunito',sans-serif; font-size:12px; font-weight:700; color:var(--mint); background:none; border:2px dashed #BCE8DC; padding:8px 12px; border-radius:8px; cursor:pointer; width:100%; margin-bottom:8px; -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
+  .mp-compare-btn:hover { border-color:var(--mint); }
+
+  .mp-meal { background:#fff; border-radius:10px; padding:10px 12px; box-shadow:0 1px 6px rgba(0,0,0,.05); }
+  .mp-meal-main { display:flex; align-items:center; gap:6px; }
+  .mp-meal-name { font-family:'Nunito',sans-serif; font-size:13px; font-weight:800; color:var(--ink); flex:1; min-width:0; word-break:break-word; }
+
+  .mp-add-meal-btn { font-family:'Nunito',sans-serif; font-size:12px; font-weight:700; color:var(--lavender); background:none; border:2px dashed #D8CDF0; padding:8px 12px; border-radius:8px; cursor:pointer; width:100%; }
+  .mp-add-meal-btn:hover { border-color:var(--lavender); }
+
+  /* modal */
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:200; display:flex; align-items:flex-end; justify-content:center; }
+  .modal-overlay.hidden { display:none; }
+  .modal { background:#fff; border-radius:20px 20px 0 0; padding:24px 20px 40px; width:100%; max-width:600px; }
+  .modal h3 { font-family:'Nunito',sans-serif; font-size:18px; font-weight:900; color:var(--ink); margin-bottom:16px; }
+  .modal-field { margin-bottom:14px; }
+  .modal-label { font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; display:block; margin-bottom:6px; }
+  .modal-input { width:100%; border:2px solid var(--dot-empty); border-radius:10px; padding:11px 14px; font-family:'Quicksand',sans-serif; font-size:15px; color:var(--ink); background:#fff; outline:none; }
+  .modal-input:focus { border-color:var(--mint); }
+  #modal-results { margin-top:6px; display:flex; flex-direction:column; gap:4px; max-height:220px; overflow-y:auto; }
+  .result-item { padding:10px 14px; border-radius:10px; background:var(--paper); font-size:14px; font-weight:600; color:var(--ink); cursor:pointer; -webkit-tap-highlight-color:transparent; transition:background .15s; }
+  .result-item:hover, .result-item:active { background:#E8F8F3; color:var(--mint); }
+  .result-item.add-new { color:var(--mint); font-weight:700; background:#F0FDF8; border:1.5px dashed var(--mint); }
+  .modal-actions { display:flex; gap:10px; margin-top:18px; }
+  .modal-confirm { flex:1; background:var(--mint); color:#fff; font-family:'Nunito',sans-serif; font-weight:800; font-size:15px; border:none; border-radius:12px; padding:13px; cursor:pointer; }
+  .modal-cancel  { background:var(--paper); color:var(--muted); font-family:'Nunito',sans-serif; font-weight:700; font-size:15px; border:none; border-radius:12px; padding:13px 18px; cursor:pointer; }
+
+  @media print {
+    @page { margin:8mm 7mm; size:A4; }
+    * { -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important; }
+    body { background:#fff !important; }
+    header { padding:12px 14px 36px !important; }
+    header::after { background:#fff !important; }
+    .hdeco,.addbtn-wrap,.printbtn,.sync-bar { display:none !important; }
+    main { margin:10px auto !important; gap:9px !important; padding:0 6px !important; }
+    .card { box-shadow:none !important; border:1px solid #e0d8d0 !important; break-inside:avoid; }
+    .foodgrid { padding:7px !important; gap:4px !important; grid-template-columns:repeat(auto-fill,minmax(145px,1fr)) !important; }
+    .fi { padding:4px 8px !important; }
+    .fn { font-size:10.5px !important; }
+    .dot { width:9px !important; height:9px !important; }
+    .h-veg{background:#5BBFA3!important} .h-fruit{background:#F7856E!important}
+    .h-meat{background:#E07A8C!important} .h-legume{background:#D4845A!important}
+    .h-nuts{background:#B8964A!important} .h-grain{background:#B8A9E0!important}
+    .h-dairy{background:#7EC8E3!important} .h-allergen{background:#E07A8C!important}
+    .h-notes{background:#C5B8E8!important}
+    .cardhead .title,.cardhead .cnt { color:#fff !important; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdeco">🍼🥦🍓🥑🌾</div>
+  <div class="hinner">
+    <div class="badge">Starting Solids</div>
+    <h1>Baby's <span>First Foods</span> Tracker</h1>
+    <p>Tap › each time your baby tries a food. Track exposures and reactions!</p>
+  </div>
+</header>
+
+<div class="sync-bar">
+  <div class="sync-badge connecting" id="syncBadge">
+    <div class="sync-dot"></div>
+    <span id="syncText">Connecting…</span>
+  </div>
+</div>
+
+<div class="namebar">
+  <div class="namewrap">
+    <span class="namelbl">Baby's name:</span>
+    <input class="nameinp" id="babyName" type="text" placeholder="Enter name here…">
+  </div>
+</div>
+
+<div id="page-tracker">
+<main>
+  <div class="card" id="card-veg"><button class="cardhead h-veg" onclick="toggleCard('veg')" type="button"><span class="icon">🥦</span><span class="title">Vegetables</span><span class="cnt" id="cnt-veg">0 tried</span><span class="chevron">▾</span></button><div class="card-body"><div class="foodgrid" id="g-veg"></div><div class="addbtn-wrap"><button class="addbtn" onclick="addFood('veg')" type="button">＋ Add your own</button></div></div></div>
+  <div class="card" id="card-fruit"><button class="cardhead h-fruit" onclick="toggleCard('fruit')" type="button"><span class="icon">🍓</span><span class="title">Fruit</span><span class="cnt" id="cnt-fruit">0 tried</span><span class="chevron">▾</span></button><div class="card-body"><div class="foodgrid" id="g-fruit"></div><div class="addbtn-wrap"><button class="addbtn" onclick="addFood('fruit')" type="button">＋ Add your own</button></div></div></div>
+  <div class="card" id="card-meat"><button class="cardhead h-meat" onclick="toggleCard('meat')" type="button"><span class="icon">🥩</span><span class="title">Meat &amp; Fish</span><span class="cnt" id="cnt-meat">0 tried</span><span class="chevron">▾</span></button><div class="card-body"><div class="foodgrid" id="g-meat"></div><div class="addbtn-wrap"><button class="addbtn" onclick="addFood('meat')" type="button">＋ Add your own</button></div></div></div>
+  <div class="card" id="card-legume"><button class="cardhead h-legume" onclick="toggleCard('legume')" type="button"><span class="icon">🫘</span><span class="title">Legumes &amp; Beans</span><span class="cnt" id="cnt-legume">0 tried</span><span class="chevron">▾</span></button><div class="card-body"><div class="foodgrid" id="g-legume"></div><div class="addbtn-wrap"><button class="addbtn" onclick="addFood('legume')" type="button">＋ Add your own</button></div></div></div>
+  <div class="card" id="card-nuts"><button class="cardhead h-nuts" onclick="toggleCard('nuts')" type="button"><span class="icon">🥜</span><span class="title">Nuts &amp; Seeds</span><span class="cnt" id="cnt-nuts">0 tried</span><span class="chevron">▾</span></button><div class="card-body"><div class="foodgrid" id="g-nuts"></div><div class="addbtn-wrap"><button class="addbtn" onclick="addFood('nuts')" type="button">＋ Add your own</button></div></div></div>
+  <div class="card" id="card-grain"><button class="cardhead h-grain" onclick="toggleCard('grain')" type="button"><span class="icon">🌾</span><span class="title">Grains &amp; Cereals</span><span class="cnt" id="cnt-grain">0 tried</span><span class="chevron">▾</span></button><div class="card-body"><div class="foodgrid" id="g-grain"></div><div class="addbtn-wrap"><button class="addbtn" onclick="addFood('grain')" type="button">＋ Add your own</button></div></div></div>
+  <div class="card" id="card-dairy"><button class="cardhead h-dairy" onclick="toggleCard('dairy')" type="button"><span class="icon">🧀</span><span class="title">Dairy</span><span class="cnt" id="cnt-dairy">0 tried</span><span class="chevron">▾</span></button><div class="card-body"><div class="foodgrid" id="g-dairy"></div><div class="addbtn-wrap"><button class="addbtn" onclick="addFood('dairy')" type="button">＋ Add your own</button></div></div></div>
+
+  <div class="card" id="card-allergen">
+    <button class="cardhead h-allergen" onclick="toggleCard('allergen')" type="button"><span class="icon">⚠️</span><span class="title">Common Allergens</span><span class="cnt" id="cnt-allergen">0 tried</span><span class="chevron">▾</span></button>
+    <div class="card-body">
+    <div class="a-info-box">Introduce allergens one at a time, 3–5 days apart. Keep offering regularly once introduced. Fill a dot for each exposure and note any reactions.</div>
+    <div class="a-col-heads">
+      <div class="a-col-head">Allergen &amp; examples</div>
+      <div class="a-col-head center">Exposures</div>
+      <div class="a-col-head">Reactions / Notes</div>
+    </div>
+    <div class="a-list" id="a-list"></div>
+    </div>
+  </div>
+
+  <div class="card" id="card-notes">
+    <button class="cardhead h-notes" onclick="toggleCard('notes')" type="button"><span class="icon">📝</span><span class="title">General Notes</span><span class="chevron" style="color:rgba(61,44,30,.5)">▾</span></button>
+    <div class="card-body">
+    <div class="notesgrid" id="notesgrid"></div>
+    </div>
+  </div>
+</main>
+
+<div style="text-align:center;padding:0 14px 4px;">
+  <button class="printbtn" onclick="window.print()">🖨️ Print / Save as PDF</button>
+</div>
+<footer>
+  <strong>Important:</strong> Guide only — not a substitute for professional medical advice.<br>
+  Wait until 12 months to offer honey. Always supervise mealtimes.
+</footer>
+</div><!-- /page-tracker -->
+
+<!-- INVENTORY PAGE -->
+<div id="page-inventory">
+  <main>
+    <div class="inv-header">
+      <div class="inv-header-left">
+        <h2>🧊 Food Inventory</h2>
+        <p>Track portions you have ready to use</p>
+      </div>
+      <button class="inv-add-btn" onclick="openAddModal()" type="button">＋ Add Food</button>
+    </div>
+    <div id="inv-list-wrap"></div>
+  </main>
+</div>
+
+<!-- MEAL PLAN PAGE -->
+<div id="page-mealplan">
+  <main>
+    <div class="mp-header">
+      <div class="mp-header-left">
+        <h2>📅 Meal Plan</h2>
+        <p>Plan meals for each week</p>
+      </div>
+      <div class="mp-header-actions">
+        <button class="mp-settings-btn" onclick="openMpSettings()" type="button" aria-label="Saved ingredients">⚙️</button>
+        <button class="mp-settings-btn" onclick="openMpImport()" type="button" aria-label="Import week">📥</button>
+        <button class="mp-add-btn" onclick="addMpWeek()" type="button">＋ Add Week</button>
+      </div>
+    </div>
+    <div id="mp-list-wrap"></div>
+  </main>
+</div>
+
+<!-- ALLERGEN NOTES MODAL -->
+<div class="notes-modal-overlay hidden" id="notes-modal-overlay">
+  <div class="notes-modal">
+    <h3 id="notes-modal-title">Notes</h3>
+    <div class="notes-modal-sub">Tap Save when done.</div>
+    <textarea class="notes-textarea" id="notes-modal-textarea" placeholder="Add your notes here…"></textarea>
+    <div class="notes-modal-actions">
+      <button class="notes-modal-cancel" id="notes-modal-cancel" type="button">Cancel</button>
+      <button class="notes-modal-save" id="notes-modal-save" type="button">Save Notes</button>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" id="nav-tracker" type="button">
+    <span class="nav-icon">📋</span>
+    <span class="nav-label">Tracker</span>
+  </button>
+  <button class="nav-btn" id="nav-inventory" type="button">
+    <span class="nav-icon">🧊</span>
+    <span class="nav-label">Inventory</span>
+  </button>
+  <button class="nav-btn" id="nav-mealplan" type="button">
+    <span class="nav-icon">📅</span>
+    <span class="nav-label">Meal Plan</span>
+  </button>
+</nav>
+
+<!-- ADD / EDIT INVENTORY MODAL -->
+<div class="inv-modal-overlay hidden" id="inv-modal-overlay">
+  <div class="inv-modal">
+    <h3 id="inv-modal-title">Add Food to Inventory</h3>
+    <div class="modal-field" id="inv-modal-search-wrap">
+      <label class="modal-label">Search food</label>
+      <input class="modal-input" id="modal-search" type="text" placeholder="Type to search…" autocomplete="off">
+      <div id="modal-results"></div>
+    </div>
+    <div class="modal-field" id="modal-selected-wrap" style="display:none">
+      <label class="modal-label">Selected</label>
+      <div id="modal-selected-name" style="font-family:'Nunito',sans-serif;font-size:16px;font-weight:800;color:var(--mint);padding:4px 0;"></div>
+    </div>
+    <div class="modal-field" id="inv-modal-name-wrap" style="display:none">
+      <label class="modal-label">Name</label>
+      <input class="modal-input" id="inv-modal-name" type="text" placeholder="Food name">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Portions</label>
+      <input class="modal-input" id="modal-portions" type="number" min="0" max="99" placeholder="e.g. 4">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Date cooked</label>
+      <input class="modal-input" id="modal-date" type="date">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Ingredients (optional)</label>
+      <input class="modal-input" id="modal-ingredient-search" type="text" placeholder="Search ingredients…" autocomplete="off">
+      <div id="modal-ingredient-results" class="inv-ingredient-results"></div>
+      <div id="modal-ingredient-chips" class="inv-ingredient-chips"></div>
+    </div>
+    <div class="inv-modal-actions">
+      <button class="inv-modal-delete" id="inv-modal-delete-btn" onclick="deleteFromInvModal()" type="button" style="display:none">🗑 Delete</button>
+      <button class="modal-cancel" onclick="closeInvModal()" type="button">Cancel</button>
+      <button class="inv-modal-save" onclick="saveInvModal()" type="button">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD / EDIT MEAL MODAL -->
+<div class="inv-modal-overlay hidden" id="mp-modal-overlay">
+  <div class="inv-modal">
+    <h3 id="mp-modal-title">Add Meal</h3>
+    <div class="modal-field">
+      <label class="modal-label">Meal name</label>
+      <input class="modal-input" id="mp-modal-name" type="text" placeholder="e.g. Pumpkin &amp; lentil mash">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Ingredients</label>
+      <input class="modal-input" id="mp-ingredient-search" type="text" placeholder="Search ingredients…" autocomplete="off">
+      <div id="mp-ingredient-results" class="inv-ingredient-results"></div>
+      <div id="mp-ingredient-chips" class="inv-ingredient-chips"></div>
+    </div>
+    <div class="inv-modal-actions">
+      <button class="inv-modal-delete" id="mp-modal-delete-btn" onclick="deleteMpModal()" type="button" style="display:none">🗑 Delete</button>
+      <button class="modal-cancel" onclick="closeMpModal()" type="button">Cancel</button>
+      <button class="inv-modal-save" onclick="saveMpModal()" type="button">Save Meal</button>
+    </div>
+  </div>
+</div>
+
+<!-- SAVED INGREDIENTS SETTINGS MODAL -->
+<div class="inv-modal-overlay hidden" id="mp-settings-overlay">
+  <div class="inv-modal">
+    <h3>Saved Ingredients</h3>
+    <p class="mp-settings-intro">Foods and ingredients you've added — either as a new Inventory food or while planning a meal. Remove any you don't need anymore — this won't change any meals or inventory items that already use them, it'll just stop them showing up as a suggestion.</p>
+    <div id="mp-settings-list"></div>
+    <div class="inv-modal-actions">
+      <button class="modal-cancel" onclick="closeMpSettings()" type="button">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- IMPORT WEEK MODAL -->
+<div class="inv-modal-overlay hidden" id="mp-import-overlay">
+  <div class="inv-modal">
+    <h3>Import Week</h3>
+    <div class="modal-field">
+      <label class="modal-label">Import into</label>
+      <select class="modal-input" id="mp-import-target"></select>
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Paste your meal plan</label>
+      <textarea class="notes-textarea mp-import-textarea" id="mp-import-text" placeholder="Saturday: Porridge = Pumpkin, Oats | Snack = Pear
+Sunday: Mash = Broccoli, Potato
+Monday: Meatball Dinner = Chicken Meatballs, Spaghetti"></textarea>
+      <p class="mp-import-hint">One line per day: <strong>Day: Meal = Ingredient, Ingredient</strong>. Use <strong>|</strong> between multiple meals on the same day. Ingredients are optional.</p>
+    </div>
+    <div id="mp-import-preview"></div>
+    <div class="inv-modal-actions">
+      <button class="modal-cancel" onclick="closeMpImport()" type="button">Cancel</button>
+      <button class="inv-modal-save" onclick="runMpImport()" type="button">Import</button>
+    </div>
+  </div>
+</div>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, onSnapshot, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+// ── Firebase config ──────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyADKgPXrm52Dv6R3qi1T9WhlpsXaPNWeRQ",
+  authDomain: "baby-solids-tracker-f2ded.firebaseapp.com",
+  projectId: "baby-solids-tracker-f2ded",
+  storageBucket: "baby-solids-tracker-f2ded.firebasestorage.app",
+  messagingSenderId: "600604955746",
+  appId: "1:600604955746:web:62786e9299da544e382d3b"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+const DOC = doc(db, "tracker", "shared");
+
+// ── Data ─────────────────────────────────────────────────────────
+// Nutrition tags: one standout nutrient per food (baby-specific priorities)
+const TAGS = {
+  // Vegetables
+  'Asparagus':'Folate',
+  'Beans':'Fibre',
+  'Beetroot':'Folate',
+  'Broccoli':'Vit C',       // Vit C aids iron absorption — very useful
+  'Cabbage':'Vit C',
+  'Capsicum':'Vit C',       // highest Vit C of any veg
+  'Carrot':'Vit A',
+  'Cauliflower':'Vit C',
+  'Corn':'Fibre',
+  'Eggplant':'Fibre',
+  'Mushrooms':'Vit D',      // rare non-animal Vit D source
+  'Parsnip':'Fibre',
+  'Peas':'Iron',            // good plant iron for a veg, plus protein
+  'Potato':'Potassium',
+  'Pumpkin':'Vit A',
+  'Spinach':'Folate',       // folate > iron here due to absorption issues
+  'Sweet potato':'Vit A',   // one of the richest Vit A sources
+  'Tomato':'Vit C',
+  'Zucchini':'Folate',
+  // Fruit
+  'Apple':'Fibre',
+  'Apricot':'Vit A',
+  'Avocado':'H. Fats',      // healthy fats critical for brain development
+  'Banana':'Potassium',
+  'Blackberries':'Vit C',
+  'Blueberry':'Antioxidants',
+  'Fig':'Fibre',
+  'Kiwi fruit':'Vit C',
+  'Lemon':'Vit C',
+  'Mango':'Vit A',
+  'Nectarine':'Vit A',
+  'Orange':'Vit C',
+  'Pear':'Fibre',
+  'Peach':'Vit A',
+  'Pineapple':'Vit C',
+  'Prunes':'Fibre',
+  'Raspberry':'Vit C',
+  'Rockmelon':'Vit A',
+  'Strawberry':'Vit C',
+  'Watermelon':'Vit C',
+  // Meat & Fish — haem iron is the #1 priority at 6 months
+  'Beef':'Iron',            // best haem iron source
+  'Chicken':'Zinc',         // zinc > protein here; good zinc source
+  'Lamb':'Iron',            // high haem iron
+  'Pork':'Zinc',
+  'Turkey':'Zinc',
+  'Salmon':'Omega-3',       // DHA critical for brain development
+  'Sardines':'Omega-3',     // also high calcium from bones
+  'Tuna':'Omega-3',
+  'White fish':'Protein',
+  // Legumes & Beans
+  'Black beans':'Iron',
+  'Butterbeans':'Fibre',
+  'Cannellini beans':'Fibre',
+  'Chickpeas':'Iron',       // good plant iron
+  'Kidney beans':'Iron',
+  'Lentils':'Iron',         // best plant iron source
+  // Nuts & Seeds
+  'Chia seeds':'Omega-3',
+  'Hemp seeds':'Omega-3',
+  'Pumpkin seeds':'Zinc',   // one of the best plant zinc sources
+  'Sunflower seeds':'Vit E',
+  // Grains
+  'Barley':'Fibre',
+  'Oats':'Iron',            // iron-fortified; good first grain
+  'Quinoa':'Protein',       // complete protein — rare for a grain
+  'Weet-Bix':'Iron',        // fortified
+  // Dairy
+  'Plain yoghurt':'Calcium',
+  'Cottage cheese':'Protein',
+  'Goats cheese':'Calcium',
+  'Mozzarella':'Calcium',
+  'Ricotta':'Calcium',
+};
+
+// Tag colours
+const TAG_COLORS = {
+  'Iron':        { bg:'#FFE8ED', color:'#C0415A' },
+  'Protein':     { bg:'#EDE8FF', color:'#6B4FC7' },
+  'Omega-3':     { bg:'#E8F4FF', color:'#2E7FBF' },
+  'Calcium':     { bg:'#E8F8F4', color:'#2E8A6A' },
+  'Vit A':       { bg:'#FFF3E0', color:'#C07020' },
+  'Vit C':       { bg:'#FFF8E1', color:'#B08000' },
+  'Vit D':       { bg:'#F5F0FF', color:'#7050C0' },
+  'Vit E':       { bg:'#F0FFF0', color:'#3A8A3A' },
+  'Zinc':        { bg:'#F0F4FF', color:'#4060B0' },
+  'H. Fats':     { bg:'#FFFDE8', color:'#8A7800' },
+  'Fibre':       { bg:'#F0FFE8', color:'#4A8A20' },
+  'Folate':      { bg:'#FFF0F8', color:'#A03080' },
+  'Potassium':   { bg:'#FFF5E8', color:'#A06020' },
+  'Antioxidants':{ bg:'#F0E8FF', color:'#6040A0' },
+};
+
+const FOODS = {
+  veg:     { color:'#5BBFA3', label:'Vegetables',        icon:'🥦', items:['Asparagus','Beans','Beetroot','Broccoli','Cabbage','Capsicum','Carrot','Cauliflower','Celery','Corn','Cucumber','Eggplant','Garlic','Ginger','Lettuce','Mint','Mushrooms','Onion','Parsnip','Peas','Potato','Pumpkin','Rosemary','Shallot','Spinach','Sweet potato','Tomato','Zucchini'] },
+  fruit:   { color:'#F7856E', label:'Fruit',             icon:'🍓', items:['Apple','Apricot','Avocado','Banana','Blackberries','Blueberry','Fig','Grapes','Kiwi fruit','Lemon','Mango','Nectarine','Orange','Pear','Peach','Pineapple','Prunes','Raspberry','Rockmelon','Strawberry','Watermelon'] },
+  meat:    { color:'#E07A8C', label:'Meat & Fish',       icon:'🥩', items:['Beef','Chicken','Lamb','Pork','Salmon','Sardines','Tuna','Turkey','White fish'] },
+  legume:  { color:'#D4845A', label:'Legumes & Beans',   icon:'🫘', items:['Black beans','Butterbeans','Cannellini beans','Chickpeas','Kidney beans','Lentils'] },
+  nuts:    { color:'#B8964A', label:'Nuts & Seeds',      icon:'🥜', items:['Chia seeds','Hemp seeds','Pumpkin seeds','Sunflower seeds'] },
+  grain:   { color:'#B8A9E0', label:'Grains & Cereals',  icon:'🌾', items:['Barley','Bread','Couscous','Noodles','Oats','Pasta','Quinoa','Rice','Weet-Bix'] },
+  dairy:   { color:'#7EC8E3', label:'Dairy',             icon:'🧀', items:['Plain yoghurt','Cottage cheese','Goats cheese','Mozzarella','Ricotta'] },
+};
+
+const ALLERGENS = [
+  { name:"Cow's Milk", ex:"Yoghurt, soft cheese, ricotta, cow's milk on cereal" },
+  { name:"Eggs",       ex:"Well-cooked egg, omelette, frittata" },
+  { name:"Fish",       ex:"Salmon, tuna — avoid high-mercury fish e.g. shark" },
+  { name:"Shellfish",  ex:"Prawns, crab, oysters" },
+  { name:"Peanuts",    ex:"Smooth peanut butter, finely ground peanuts" },
+  { name:"Sesame",     ex:"Tahini, ground sesame seeds" },
+  { name:"Soy",        ex:"Silken tofu, calcium-fortified soy milk" },
+  { name:"Wheat",      ex:"Pasta, flour in baking, semolina, soft weet-bix" },
+  { name:"Tree Nuts", group:true },
+  { name:"Almond",     ex:"Smooth almond butter, finely ground almonds",       sub:true },
+  { name:"Brazil nut", ex:"Finely ground brazil nuts",                          sub:true },
+  { name:"Cashew",     ex:"Smooth cashew butter, finely ground cashews",        sub:true },
+  { name:"Hazelnut",   ex:"Smooth hazelnut butter, finely ground hazelnuts",    sub:true },
+  { name:"Macadamia",  ex:"Finely ground macadamia",                            sub:true },
+  { name:"Pecan",      ex:"Finely ground pecans",                               sub:true },
+  { name:"Pine nuts",  ex:"Finely ground pine nuts",                            sub:true },
+  { name:"Pistachio",  ex:"Finely ground pistachios",                           sub:true },
+  { name:"Walnut",     ex:"Finely ground walnuts",                              sub:true },
+];
+
+// ── State ─────────────────────────────────────────────────────────
+// remoteState = last snapshot from Firestore (source of truth)
+// localState  = working copy we render from
+let remoteState = {};
+let localState  = {};
+let saveTimer   = null;
+let initialised = false;
+
+function setSyncStatus(status, text) {
+  const badge = document.getElementById('syncBadge');
+  const label = document.getElementById('syncText');
+  badge.className = 'sync-badge ' + status;
+  label.textContent = text;
+}
+
+// Debounced save — waits 800ms after last change before writing to Firestore
+function scheduleSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    try {
+      await setDoc(DOC, localState);
+    } catch(e) {
+      setSyncStatus('error', 'Sync error');
+      console.error(e);
+    }
+  }, 800);
+}
+
+function setState(key, value) {
+  localState[key] = value;
+  scheduleSave();
+}
+
+// ── Real-time listener (updates state after initial render) ─────────
+onSnapshot(DOC, (snap) => {
+  setSyncStatus('connected', 'Synced ✓');
+  if (snap.exists()) {
+    remoteState = snap.data();
+    localState = { ...remoteState };
+  } else {
+    remoteState = {};
+    localState  = {};
+  }
+  migrateData();
+  restoreCustomFoods();
+  Object.keys(FOODS).forEach(renderSec);
+  refreshAllDots();
+  refreshAllNotes();
+  refreshName();
+  renderInventory();
+  renderMealPlan();
+}, (err) => {
+  setSyncStatus('error', 'Offline');
+  console.error(err);
+});
+
+// ── Data migration (old protein__ keys -> new category keys) ──────
+function migrateData() {
+  const migrations = [
+    ['protein__Beef','meat__Beef'],['protein__Chicken','meat__Chicken'],
+    ['protein__Lamb','meat__Lamb'],['protein__Pork','meat__Pork'],
+    ['protein__Turkey','meat__Turkey'],['protein__Salmon','meat__Salmon'],
+    ['protein__Sardines','meat__Sardines'],['protein__Tuna','meat__Tuna'],
+    ['protein__White fish','meat__White fish'],
+    ['protein__Black beans','legume__Black beans'],['protein__Butterbeans','legume__Butterbeans'],
+    ['protein__Cannellini beans','legume__Cannellini beans'],['protein__Chickpeas','legume__Chickpeas'],
+    ['protein__Kidney beans','legume__Kidney beans'],['protein__Lentils','legume__Lentils'],
+    ['protein__Chia seeds','nuts__Chia seeds'],['protein__Hemp seeds','nuts__Hemp seeds'],
+    ['protein__Pumpkin seeds','nuts__Pumpkin seeds'],['protein__Sunflower seeds','nuts__Sunflower seeds'],
+    ['thumb__protein__Beef','thumb__meat__Beef'],['thumb__protein__Chicken','thumb__meat__Chicken'],
+    ['thumb__protein__Lamb','thumb__meat__Lamb'],['thumb__protein__Pork','thumb__meat__Pork'],
+    ['thumb__protein__Turkey','thumb__meat__Turkey'],['thumb__protein__Salmon','thumb__meat__Salmon'],
+    ['thumb__protein__Sardines','thumb__meat__Sardines'],['thumb__protein__Tuna','thumb__meat__Tuna'],
+    ['thumb__protein__White fish','thumb__meat__White fish'],
+    ['thumb__protein__Black beans','thumb__legume__Black beans'],
+    ['thumb__protein__Butterbeans','thumb__legume__Butterbeans'],
+    ['thumb__protein__Cannellini beans','thumb__legume__Cannellini beans'],
+    ['thumb__protein__Chickpeas','thumb__legume__Chickpeas'],
+    ['thumb__protein__Kidney beans','thumb__legume__Kidney beans'],
+    ['thumb__protein__Lentils','thumb__legume__Lentils'],
+    ['thumb__protein__Chia seeds','thumb__nuts__Chia seeds'],
+    ['thumb__protein__Hemp seeds','thumb__nuts__Hemp seeds'],
+    ['thumb__protein__Pumpkin seeds','thumb__nuts__Pumpkin seeds'],
+    ['thumb__protein__Sunflower seeds','thumb__nuts__Sunflower seeds'],
+  ];
+  let migrated = false;
+  migrations.forEach(([oldKey, newKey]) => {
+    if (localState[oldKey] !== undefined && localState[newKey] === undefined) {
+      localState[newKey] = localState[oldKey];
+      delete localState[oldKey];
+      migrated = true;
+    }
+  });
+  if (migrated) scheduleSave();
+}
+
+// ── Date helpers ─────────────────────────────────────────────────
+function todayStr() {
+  const d = new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function formatLast(dateStr) {
+  if (!dateStr) return null;
+  const today = todayStr();
+  if (dateStr === today) return 'Today';
+  const [ty,tm,td] = today.split('-').map(Number);
+  const [dy,dm,dd] = dateStr.split('-').map(Number);
+  const diff = Math.round((new Date(ty,tm-1,td) - new Date(dy,dm-1,dd)) / 86400000);
+  if (diff === 1) return 'Yesterday';
+  if (diff < 7)  return diff + ' days ago';
+  if (diff < 14) return '1 week ago';
+  return Math.floor(diff/7) + ' weeks ago';
+}
+
+// ── Food counter (Option B chevrons) ─────────────────────────────
+function makeCounter(k, color) {
+  const wrap = document.createElement('div');
+  wrap.className = 'counter-wrap';
+  wrap.id = 'cwrap__' + k.replace(/[^a-zA-Z0-9]/g,'_');
+  renderCounter(wrap, k, color);
+  return wrap;
+}
+function renderCounter(wrap, k, color) {
+  wrap.innerHTML = '';
+  const val = localState[k] || 0;
+  const counter = document.createElement('div');
+  counter.className = 'counter';
+  const minus = document.createElement('button');
+  minus.type = 'button';
+  minus.className = 'cbtn minus' + (val > 0 ? ' has-val' : '');
+  minus.textContent = '‹';
+  minus.style.setProperty('--dc-color', color);
+  minus.onclick = (e) => { e.stopPropagation(); adjustFood(k, color, -1); };
+  const valEl = document.createElement('span');
+  valEl.className = 'cval' + (val === 0 ? ' zero' : '');
+  valEl.textContent = val;
+  const plus = document.createElement('button');
+  plus.type = 'button';
+  plus.className = 'cbtn plus';
+  plus.style.setProperty('--dc-color', color);
+  plus.textContent = '›';
+  plus.onclick = (e) => { e.stopPropagation(); adjustFood(k, color, 1); };
+  counter.appendChild(minus); counter.appendChild(valEl); counter.appendChild(plus);
+  const lbl = document.createElement('span');
+  lbl.className = 'clabel';
+  lbl.textContent = 'exposures';
+  wrap.appendChild(counter); wrap.appendChild(lbl);
+}
+function adjustFood(k, color, delta) {
+  const newVal = Math.max(0, (localState[k] || 0) + delta);
+  setState(k, newVal);
+  const wrap = document.getElementById('cwrap__' + k.replace(/[^a-zA-Z0-9]/g,'_'));
+  if (wrap) renderCounter(wrap, k, color);
+  const fi = document.getElementById('fi__' + k.replace(/[^a-zA-Z0-9]/g,'_'));
+  if (fi) fi.classList.toggle('tried', newVal > 0);
+  updateCnt(k.split('__')[0]);
+}
+
+function refreshAllDots() {
+  Object.keys(FOODS).forEach(sec => {
+    const { color, items } = FOODS[sec];
+    items.forEach(food => {
+      const k = sec+'__'+food;
+      const wrap = document.getElementById('cwrap__' + k.replace(/[^a-zA-Z0-9]/g,'_'));
+      if (wrap) renderCounter(wrap, k, color);
+      const fi = document.getElementById('fi__' + k.replace(/[^a-zA-Z0-9]/g,'_'));
+      if (fi) fi.classList.toggle('tried', (localState[k]||0) > 0);
+      const tk = 'thumb__'+k;
+      const tw = document.getElementById('thumbs__' + k.replace(/[^a-zA-Z0-9]/g,'_'));
+      if (tw) renderThumbs(tw, tk);
+    });
+    updateCnt(sec);
+  });
+  // Allergen counters + last date
+  updateAllergenCount();
+  ALLERGENS.filter(a => !a.group).forEach(a => {
+    const k = 'al__'+a.name;
+    const wrap = document.getElementById('cwrap__' + k.replace(/[^a-zA-Z0-9]/g,'_'));
+    if (wrap) renderAllergenCounter(wrap, k);
+    const lk = 'last__'+a.name;
+    const lastEl = document.getElementById('last__'+a.name.replace(/[^a-zA-Z0-9]/g,'_'));
+    if (lastEl) {
+      const fmt = formatLast(localState[lk]);
+      lastEl.textContent = fmt || 'never';
+      lastEl.className = 'last-exp' + (fmt ? '' : ' empty');
+    }
+  });
+}
+
+function refreshAllNotes() {
+  ALLERGENS.filter(a => !a.group).forEach(a => {
+    const nk = 'aln__'+a.name;
+    const el = document.getElementById('anote__'+a.name.replace(/[^a-zA-Z0-9]/g,'_'));
+    if (el) {
+      el.classList.toggle('has-notes', !!(localState[nk]));
+      el.title = localState[nk] ? 'View/edit notes' : 'Add notes';
+    }
+  });
+  // General notes
+  ['Reactions noticed','Foods refused','Favourite so far','Foods to retry','Texture notes','Mealtime wins','Questions for doctor','Other notes'].forEach((_,i) => {
+    const el = document.getElementById('gn__'+i);
+    if (el && document.activeElement !== el) el.value = localState['gn'+i] || '';
+  });
+}
+
+function refreshName() {
+  const el = document.getElementById('babyName');
+  if (el && document.activeElement !== el) el.value = localState.bname || '';
+}
+
+// ── Food sections ─────────────────────────────────────────────────
+function makeThumbs(k) {
+  const tk = 'thumb__'+k;
+  const wrap = document.createElement('div');
+  wrap.className = 'thumbs';
+  wrap.id = 'thumbs__' + k.replace(/[^a-zA-Z0-9]/g,'_');
+  renderThumbs(wrap, tk);
+  return wrap;
+}
+
+function renderThumbs(wrap, tk) {
+  wrap.innerHTML = '';
+  const val = localState[tk] || null; // 'up', 'down', or null
+  ['👍','👎'].forEach(emoji => {
+    const btn = document.createElement('span');
+    btn.className = 'thumb' + ((emoji==='👍'&&val==='up')||(emoji==='👎'&&val==='down') ? ' on' : '');
+    btn.textContent = emoji;
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      const cur = localState[tk] || null;
+      const next = (emoji==='👍' && cur==='up') || (emoji==='👎' && cur==='down') ? null : (emoji==='👍' ? 'up' : 'down');
+      setState(tk, next);
+      const w = document.getElementById('thumbs__' + tk.replace('thumb__','').replace(/[^a-zA-Z0-9]/g,'_'));
+      if (w) renderThumbs(w, tk);
+    };
+    wrap.appendChild(btn);
+  });
+}
+
+function buildFoodItem(sec, food) {
+  const k = sec+'__'+food;
+  const { color } = FOODS[sec];
+  const fi = document.createElement('div');
+  fi.className = 'fi' + ((localState[k]||0) > 0 ? ' tried' : '');
+  fi.id = 'fi__' + k.replace(/[^a-zA-Z0-9]/g,'_');
+  const left = document.createElement('div');
+  left.className = 'fi-left';
+  left.appendChild(makeThumbs(k));
+  const nm = document.createElement('span');
+  nm.className = 'fn';
+  nm.textContent = food;
+  left.appendChild(nm);
+  // Nutrition tag
+  const tag = TAGS[food];
+  if (tag && TAG_COLORS[tag]) {
+    const pill = document.createElement('span');
+    pill.className = 'tag-nut';
+    pill.textContent = tag;
+    pill.style.background = TAG_COLORS[tag].bg;
+    pill.style.color = TAG_COLORS[tag].color;
+    left.appendChild(pill);
+  }
+  fi.appendChild(left);
+  fi.appendChild(makeCounter(k, color));
+  return fi;
+}
+
+function renderSec(sec) {
+  const g = document.getElementById('g-'+sec);
+  g.innerHTML = '';
+  FOODS[sec].items.sort((a,b) => a.localeCompare(b));
+  FOODS[sec].items.forEach(f => g.appendChild(buildFoodItem(sec, f)));
+  updateCnt(sec);
+}
+
+function updateCnt(sec) {
+  const el = document.getElementById('cnt-'+sec);
+  if (!el) return;
+  const n = Object.keys(localState).filter(k => k.startsWith(sec+'__') && (localState[k]||0) > 0).length;
+  el.textContent = n + ' tried';
+}
+
+window.addFood = function(sec) {
+  const name = prompt('Enter food name:');
+  if (!name || !name.trim()) return;
+  const food = name.trim();
+  if (FOODS[sec].items.includes(food)) return;
+  FOODS[sec].items.push(food);
+  // Persist custom food list
+  const ck = 'custom__'+sec;
+  const existing = localState[ck] ? JSON.parse(localState[ck]) : [];
+  existing.push(food);
+  setState(ck, JSON.stringify(existing));
+  renderSec(sec);
+};
+
+// Restore custom foods added by user
+function restoreCustomFoods() {
+  Object.keys(FOODS).forEach(sec => {
+    const ck = 'custom__'+sec;
+    if (localState[ck]) {
+      const extras = JSON.parse(localState[ck]);
+      extras.forEach(f => { if (!FOODS[sec].items.includes(f)) FOODS[sec].items.push(f); });
+    }
+  });
+}
+
+// ── Allergen counter ─────────────────────────────────────────────
+function makeAllergenCounter(k) {
+  const wrap = document.createElement('div');
+  wrap.className = 'a-dots-wrap';
+  wrap.id = 'cwrap__' + k.replace(/[^a-zA-Z0-9]/g,'_');
+  renderAllergenCounter(wrap, k);
+  return wrap;
+}
+function renderAllergenCounter(wrap, k) {
+  const lk = 'last__' + k.replace('al__','');
+  wrap.innerHTML = '';
+  const val = localState[k] || 0;
+  const counter = document.createElement('div');
+  counter.className = 'counter';
+  const minus = document.createElement('button');
+  minus.type = 'button';
+  minus.className = 'cbtn minus' + (val > 0 ? ' has-val' : '');
+  minus.textContent = '‹';
+  minus.style.setProperty('--dc-color','#E07A8C');
+  minus.onclick = (e) => { e.stopPropagation(); adjustAllergen(k, -1); };
+  const valEl = document.createElement('span');
+  valEl.className = 'cval' + (val === 0 ? ' zero' : '');
+  valEl.textContent = val;
+  const plus = document.createElement('button');
+  plus.type = 'button';
+  plus.className = 'cbtn plus';
+  plus.style.setProperty('--dc-color','#E07A8C');
+  plus.textContent = '›';
+  plus.onclick = (e) => { e.stopPropagation(); adjustAllergen(k, 1); };
+  counter.appendChild(minus); counter.appendChild(valEl); counter.appendChild(plus);
+  const lbl = document.createElement('span');
+  lbl.className = 'clabel';
+  lbl.textContent = 'exposures';
+  // Last date badge
+  const lastEl = document.createElement('span');
+  const aName = k.replace('al__','');
+  lastEl.id = 'last__' + aName.replace(/[^a-zA-Z0-9]/g,'_');
+  const fmt = formatLast(localState[lk]);
+  lastEl.textContent = fmt || 'never';
+  lastEl.className = 'last-exp' + (fmt ? '' : ' empty');
+  wrap.appendChild(counter); wrap.appendChild(lbl); wrap.appendChild(lastEl);
+}
+function adjustAllergen(k, delta) {
+  const newVal = Math.max(0, (localState[k] || 0) + delta);
+  setState(k, newVal);
+  if (delta > 0) setState('last__' + k.replace('al__',''), todayStr());
+  if (newVal === 0) setState('last__' + k.replace('al__',''), null);
+  const wrap = document.getElementById('cwrap__' + k.replace(/[^a-zA-Z0-9]/g,'_'));
+  if (wrap) renderAllergenCounter(wrap, k);
+  updateAllergenCount();
+}
+
+function updateAllergenCount() {
+  const el = document.getElementById('cnt-allergen');
+  if (!el) return;
+  const n = ALLERGENS.filter(a => !a.group && (localState['al__'+a.name]||0) > 0).length;
+  el.textContent = n + ' tried';
+}
+
+// ── Allergens ─────────────────────────────────────────────────────
+function renderAllergens() {
+  const list = document.getElementById('a-list');
+  list.innerHTML = '';
+  ALLERGENS.forEach(a => {
+    const row = document.createElement('div');
+    if (a.group) {
+      row.className = 'a-row group';
+      row.innerHTML = '<span class="a-name">🌳 '+a.name+' — introduce each nut separately</span>';
+    } else {
+      row.className = 'a-row' + (a.sub ? ' sub' : '');
+      const k  = 'al__'+a.name;
+      const nk = 'aln__'+a.name;
+      const col1 = document.createElement('div');
+      col1.innerHTML = '<div class="a-name">'+a.name+'</div><div class="a-ex">'+a.ex+'</div>';
+      const col2 = makeAllergenCounter(k);
+      const col3 = document.createElement('div');
+      col3.style.cssText = 'display:flex;align-items:center;justify-content:center;';
+      const noteBtn = document.createElement('button');
+      noteBtn.type = 'button';
+      noteBtn.className = 'a-note-btn' + (localState[nk] ? ' has-notes' : '');
+      noteBtn.id = 'anote__' + a.name.replace(/[^a-zA-Z0-9]/g, '_');
+      noteBtn.textContent = '📝';
+      noteBtn.title = localState[nk] ? 'View/edit notes' : 'Add notes';
+      noteBtn.onclick = () => openNotesModal(a.name, nk);
+      col3.appendChild(noteBtn);
+      row.appendChild(col1); row.appendChild(col2); row.appendChild(col3);
+    }
+    list.appendChild(row);
+  });
+}
+
+// ── General notes ─────────────────────────────────────────────────
+function renderNotes() {
+  const g = document.getElementById('notesgrid');
+  ['Reactions noticed','Foods refused','Favourite so far','Foods to retry','Texture notes','Mealtime wins','Questions for doctor','Other notes'].forEach((lbl, i) => {
+    const wrap = document.createElement('div'); wrap.className = 'nf';
+    const l = document.createElement('label'); l.className = 'nl'; l.textContent = lbl;
+    const inp = document.createElement('input'); inp.className = 'ni'; inp.type = 'text'; inp.placeholder = '…';
+    inp.id = 'gn__'+i;
+    inp.value = localState['gn'+i] || '';
+    inp.oninput = () => setState('gn'+i, inp.value);
+    wrap.appendChild(l); wrap.appendChild(inp); g.appendChild(wrap);
+  });
+}
+
+// ── Baby name ─────────────────────────────────────────────────────
+function initName() {
+  const el = document.getElementById('babyName');
+  el.value = localState.bname || '';
+  el.oninput = () => setState('bname', el.value);
+}
+
+// ── Init UI (called once after first Firestore snapshot) ──────────
+function initUI() {
+  restoreCustomFoods();
+  Object.keys(FOODS).forEach(renderSec);
+  renderAllergens();
+  updateAllergenCount();
+  renderNotes();
+  initName();
+  renderInventory();
+  renderMealPlan();
+}
+
+// ── MEAL PLAN STATE (declared early — renderMealPlan() runs during initUI() below) ──
+const MP_DAYS = ['Saturday','Sunday','Monday','Tuesday','Wednesday','Thursday','Friday'];
+// Anchor: Week 7 starts Saturday 11 July 2026. Every other week's dates are calculated
+// relative to this, so new weeks automatically get the correct date range.
+const MP_ANCHOR_NUM = 7;
+const MP_ANCHOR_START = new Date(2026, 6, 11); // months are 0-indexed: 6 = July
+let mpExpandedWeeks = new Set();
+let mpExpandedDays  = new Set();
+let mpComparingWeeks = new Set(); // weeks currently showing "Compare to Inventory" numbers
+let mpInitialised   = false;
+let mpModalIngredients = [];
+let mpEditingWeekId = '';
+let mpEditingDayIdx = -1;
+let mpEditingMealId = '';
+
+function mpWeekStartDate(num) {
+  const d = new Date(MP_ANCHOR_START);
+  d.setDate(d.getDate() + (num - MP_ANCHOR_NUM) * 7);
+  return d;
+}
+const MP_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function mpFormatDate(d) {
+  return `${d.getDate()} ${MP_MONTHS[d.getMonth()]}`;
+}
+function mpWeekRangeLabel(num) {
+  const start = mpWeekStartDate(num);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 6);
+  let label = `${mpFormatDate(start)} – ${mpFormatDate(end)}`;
+  if (start.getFullYear() !== new Date().getFullYear()) label += ` ${start.getFullYear()}`;
+  return label;
+}
+function mpDayDiffFromAnchor(date) {
+  const d = new Date(date); d.setHours(0, 0, 0, 0);
+  const anchor = new Date(MP_ANCHOR_START); anchor.setHours(0, 0, 0, 0);
+  return Math.round((d - anchor) / 86400000);
+}
+function mpCurrentWeekNum() {
+  return MP_ANCHOR_NUM + Math.floor(mpDayDiffFromAnchor(new Date()) / 7);
+}
+function mpCurrentDayIndex() {
+  const diff = mpDayDiffFromAnchor(new Date());
+  return ((diff % 7) + 7) % 7;
+}
+
+// ── Render UI immediately so foods always show ────────────────────
+migrateData();
+initUI();
+
+// ── Collapsible sections ──────────────────────────────────────────
+window.toggleCard = function(id) {
+  const card = document.getElementById('card-'+id);
+  if (card) card.classList.toggle('collapsed');
+};
+
+// ── TAB SWITCHING ─────────────────────────────────────────────────
+window.switchTab = function(tab) {
+  document.getElementById('page-tracker').style.display   = tab === 'tracker'   ? 'block' : 'none';
+  document.getElementById('page-inventory').style.display = tab === 'inventory' ? 'block' : 'none';
+  document.getElementById('page-mealplan').style.display  = tab === 'mealplan' ? 'block' : 'none';
+  document.getElementById('nav-tracker').classList.toggle('active',   tab === 'tracker');
+  document.getElementById('nav-inventory').classList.toggle('active', tab === 'inventory');
+  document.getElementById('nav-mealplan').classList.toggle('active', tab === 'mealplan');
+};
+
+// ── INVENTORY STATE ───────────────────────────────────────────────
+// Stored in Firestore under key 'inventory' as JSON array
+// Each item: { id, name, portions }
+
+function getInventory() {
+  try { return JSON.parse(localState['inventory'] || '[]'); } catch { return []; }
+}
+function saveInventory(items) {
+  setState('inventory', JSON.stringify(items));
+}
+
+function formatCookedDate(dateStr) {
+  if (!dateStr) return null;
+  const [y,m,d] = dateStr.split('-').map(Number);
+  return d + '/' + m + '/' + y;
+}
+
+function renderInventory() {
+  const wrap = document.getElementById('inv-list-wrap');
+  if (!wrap) return;
+  const items = getInventory().slice().sort((a, b) => a.name.localeCompare(b.name));
+  if (items.length === 0) {
+    wrap.innerHTML = '<div class="inv-empty"><span class="inv-empty-icon">🧺</span><p>No food in inventory yet.<br>Tap <strong>+ Add Food</strong> to get started.</p></div>';
+    return;
+  }
+  wrap.innerHTML = '';
+  const list = document.createElement('div');
+  list.className = 'inv-list';
+  // Column headers
+  const hdr = document.createElement('div');
+  hdr.style.cssText = 'display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2.5fr) 48px 72px 28px;gap:6px;padding:0 14px 4px;';
+  ['Food','Ingredients','Date','Qty',''].forEach((h,i) => {
+    const el = document.createElement('div');
+    el.style.cssText = 'font-family:Nunito,sans-serif;font-size:9px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--muted);text-align:' + (i===2||i===3?'center':'left');
+    el.textContent = h;
+    hdr.appendChild(el);
+  });
+  wrap.appendChild(hdr);
+  items.forEach(item => {
+    const el = document.createElement('div');
+    el.className = 'inv-item';
+    el.id = 'inv-' + item.id;
+    // Col 1: name
+    const nameEl = document.createElement('div');
+    nameEl.className = 'inv-col-name';
+    nameEl.textContent = item.name;
+    el.appendChild(nameEl);
+    // Col 2: ingredients
+    const ingsEl = document.createElement('div');
+    ingsEl.className = 'inv-col-ings';
+    if (item.ingredients && item.ingredients.length > 0) {
+      item.ingredients.forEach(ing => {
+        const pill = document.createElement('span');
+        pill.className = 'inv-ingredient-pill';
+        pill.textContent = ing;
+        ingsEl.appendChild(pill);
+      });
+    } else {
+      const dash = document.createElement('span');
+      dash.style.cssText = 'font-size:10px;color:var(--dot-empty)';
+      dash.textContent = '—';
+      ingsEl.appendChild(dash);
+    }
+    el.appendChild(ingsEl);
+    // Col 3: date
+    const dateEl = document.createElement('div');
+    dateEl.className = 'inv-col-date';
+    dateEl.textContent = item.cookedDate ? formatCookedDate(item.cookedDate) : '—';
+    el.appendChild(dateEl);
+    // Col 4: quantity
+    const qtyEl = document.createElement('div');
+    qtyEl.className = 'inv-col-qty';
+    const minus = document.createElement('button');
+    minus.type = 'button';
+    minus.className = 'inv-cbtn minus' + ((item.portions||0) <= 0 ? ' disabled' : '');
+    minus.textContent = '−';
+    minus.onclick = () => adjustPortions(item.id, -1);
+    const qw = document.createElement('div');
+    qw.className = 'inv-qty-wrap';
+    const ce = document.createElement('div');
+    ce.className = 'inv-count';
+    ce.textContent = item.portions || 0;
+    const ue = document.createElement('span');
+    ue.className = 'inv-unit';
+    ue.textContent = 'qty';
+    qw.appendChild(ce); qw.appendChild(ue);
+    const plus = document.createElement('button');
+    plus.type = 'button';
+    plus.className = 'inv-cbtn plus';
+    plus.textContent = '+';
+    plus.onclick = () => adjustPortions(item.id, 1);
+    qtyEl.appendChild(minus); qtyEl.appendChild(qw); qtyEl.appendChild(plus);
+    el.appendChild(qtyEl);
+    // Col 5: edit
+    const editBtn = document.createElement('button');
+    editBtn.type = 'button';
+    editBtn.className = 'inv-edit-btn';
+    editBtn.textContent = '✏️';
+    editBtn.onclick = () => openInvModal(item.id);
+    el.appendChild(editBtn);
+    list.appendChild(el);
+  });
+  wrap.appendChild(list);
+}
+
+function adjustPortions(id, delta) {
+  const items = getInventory();
+  const item = items.find(i => i.id === id);
+  if (!item) return;
+  item.portions = Math.max(0, (item.portions||0) + delta);
+  saveInventory(items);
+  renderInventory();
+}
+
+// ── UNIFIED INVENTORY MODAL ───────────────────────────────────────
+let modalSelectedFood = '';
+let modalIngredients = [];
+let editingInvId = '';
+
+function getAllFoods() {
+  const foods = [];
+  Object.values(FOODS).forEach(sec => sec.items.forEach(f => foods.push(f)));
+  ALLERGENS.filter(a => !a.group).forEach(a => { if (!foods.includes(a.name)) foods.push(a.name); });
+  return foods.sort((a,b) => a.localeCompare(b));
+}
+
+function renderSearchResults(query) {
+  const results = document.getElementById('modal-results');
+  results.innerHTML = '';
+  if (!query) return;
+  const all = getKnownFoods();
+  const q = query.toLowerCase();
+  all.filter(f => f.toLowerCase().includes(q)).slice(0,8).forEach(food => {
+    const el = document.createElement('div');
+    el.className = 'result-item';
+    el.textContent = food;
+    el.onclick = () => selectFood(food);
+    results.appendChild(el);
+  });
+  if (!all.some(f => f.toLowerCase() === q)) {
+    const el = document.createElement('div');
+    el.className = 'result-item add-new';
+    el.textContent = '\uFF0B Add "' + query + '" as new food';
+    el.onclick = () => selectFood(query);
+    results.appendChild(el);
+  }
+}
+
+function selectFood(name) {
+  modalSelectedFood = name;
+  document.getElementById('modal-search').value = name;
+  document.getElementById('modal-results').innerHTML = '';
+  document.getElementById('modal-selected-name').textContent = name;
+  document.getElementById('modal-selected-wrap').style.display = 'block';
+}
+
+function renderIngredientResults(query) {
+  const resultsEl = document.getElementById('modal-ingredient-results');
+  resultsEl.innerHTML = '';
+  if (!query) return;
+  const q = query.toLowerCase();
+  const all = getAllFoods();
+  all.filter(f => f.toLowerCase().includes(q)).slice(0,6).forEach(food => {
+    const el = document.createElement('div');
+    el.className = 'inv-ingredient-result';
+    el.textContent = food;
+    el.onclick = () => addIngredient(food);
+    resultsEl.appendChild(el);
+  });
+  if (!all.some(f => f.toLowerCase() === q)) {
+    const el = document.createElement('div');
+    el.className = 'inv-ingredient-result';
+    el.style.color = 'var(--mint)';
+    el.textContent = '\uFF0B Add "' + query + '"';
+    el.onclick = () => addIngredient(query);
+    resultsEl.appendChild(el);
+  }
+}
+
+function addIngredient(food) {
+  if (!modalIngredients.includes(food)) modalIngredients.push(food);
+  document.getElementById('modal-ingredient-search').value = '';
+  document.getElementById('modal-ingredient-results').innerHTML = '';
+  renderIngredientChips();
+}
+
+function renderIngredientChips() {
+  const chipsEl = document.getElementById('modal-ingredient-chips');
+  chipsEl.innerHTML = '';
+  modalIngredients.forEach((ing, i) => {
+    const chip = document.createElement('span');
+    chip.className = 'inv-chip';
+    chip.textContent = ing;
+    const rm = document.createElement('button');
+    rm.type = 'button';
+    rm.className = 'inv-chip-remove';
+    rm.textContent = '\xD7';
+    rm.onclick = () => { modalIngredients.splice(i, 1); renderIngredientChips(); };
+    chip.appendChild(rm);
+    chipsEl.appendChild(chip);
+  });
+}
+
+// Open in ADD mode
+window.openAddModal = function() {
+  editingInvId = '';
+  modalIngredients = [];
+  modalSelectedFood = '';
+  document.getElementById('inv-modal-title').textContent = 'Add Food to Inventory';
+  document.getElementById('inv-modal-name-wrap').style.display = 'none';
+  document.getElementById('inv-modal-search-wrap').style.display = 'block';
+  document.getElementById('modal-search').value = '';
+  document.getElementById('modal-results').innerHTML = '';
+  document.getElementById('modal-selected-wrap').style.display = 'none';
+  document.getElementById('modal-selected-name').textContent = '';
+  document.getElementById('modal-portions').value = '';
+  document.getElementById('modal-date').value = todayStr();
+  document.getElementById('modal-ingredient-search').value = '';
+  document.getElementById('modal-ingredient-results').innerHTML = '';
+  document.getElementById('modal-ingredient-chips').innerHTML = '';
+  document.getElementById('inv-modal-delete-btn').style.display = 'none';
+  document.getElementById('inv-modal-overlay').classList.remove('hidden');
+  setTimeout(() => document.getElementById('modal-search').focus(), 100);
+};
+
+// Open in EDIT mode
+window.openInvModal = function(id) {
+  const items = getInventory();
+  const item = items.find(i => i.id === id);
+  if (!item) return;
+  editingInvId = id;
+  modalIngredients = [...(item.ingredients || [])];
+  modalSelectedFood = item.name;
+  document.getElementById('inv-modal-title').textContent = 'Edit Item';
+  document.getElementById('inv-modal-search-wrap').style.display = 'none';
+  document.getElementById('modal-selected-wrap').style.display = 'none';
+  document.getElementById('inv-modal-name-wrap').style.display = 'block';
+  document.getElementById('inv-modal-name').value = item.name;
+  document.getElementById('modal-portions').value = item.portions || '';
+  document.getElementById('modal-date').value = item.cookedDate || todayStr();
+  document.getElementById('modal-ingredient-search').value = '';
+  document.getElementById('modal-ingredient-results').innerHTML = '';
+  document.getElementById('inv-modal-delete-btn').style.display = 'block';
+  renderIngredientChips();
+  document.getElementById('inv-modal-overlay').classList.remove('hidden');
+};
+
+window.closeInvModal = function() {
+  document.getElementById('inv-modal-overlay').classList.add('hidden');
+  document.getElementById('inv-modal-name-wrap').style.display = 'none';
+  editingInvId = '';
+};
+
+window.saveInvModal = function() {
+  const portions = parseInt(document.getElementById('modal-portions').value) || 0;
+  const cookedDate = document.getElementById('modal-date').value || null;
+  const ingredients = [...modalIngredients];
+  const items = getInventory();
+  if (editingInvId) {
+    const editedName = document.getElementById('inv-modal-name').value.trim();
+    if (!editedName) { alert('Please enter a name.'); return; }
+    const item = items.find(i => i.id === editingInvId);
+    if (item) { item.name = editedName; item.portions = portions; item.cookedDate = cookedDate; item.ingredients = ingredients; }
+    addToFoodDictionary(editedName);
+  } else {
+    const name = modalSelectedFood.trim();
+    if (!name) { alert('Please select a food first.'); return; }
+    items.push({ id: Date.now().toString(), name, portions, cookedDate, ingredients });
+    addToFoodDictionary(name);
+  }
+  saveInventory(items);
+  renderInventory();
+  closeInvModal();
+};
+
+window.deleteFromInvModal = function() {
+  if (!editingInvId) return;
+  if (!confirm('Remove ' + modalSelectedFood + ' from inventory?')) return;
+  const items = getInventory().filter(i => i.id !== editingInvId);
+  saveInventory(items);
+  renderInventory();
+  closeInvModal();
+};
+
+// ── Nav button listeners ──────────────────────────────────────────
+document.getElementById('nav-tracker').addEventListener('click', () => switchTab('tracker'));
+document.getElementById('nav-inventory').addEventListener('click', () => switchTab('inventory'));
+document.getElementById('nav-mealplan').addEventListener('click', () => switchTab('mealplan'));
+
+document.getElementById('modal-search').addEventListener('input', function() {
+  modalSelectedFood = '';
+  document.getElementById('modal-selected-wrap').style.display = 'none';
+  renderSearchResults(this.value.trim());
+});
+
+document.getElementById('modal-ingredient-search').addEventListener('input', function() {
+  renderIngredientResults(this.value.trim());
+});
+
+document.getElementById('inv-modal-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeInvModal();
+});
+// ── ALLERGEN NOTES MODAL ──────────────────────────────────────────
+let currentNotesKey = '';
+
+window.openNotesModal = function(allergenName, nk) {
+  currentNotesKey = nk;
+  document.getElementById('notes-modal-title').textContent = allergenName + ' — Notes';
+  document.getElementById('notes-modal-textarea').value = localState[nk] || '';
+  document.getElementById('notes-modal-overlay').classList.remove('hidden');
+  setTimeout(() => document.getElementById('notes-modal-textarea').focus(), 100);
+};
+
+document.getElementById('notes-modal-cancel').addEventListener('click', () => {
+  document.getElementById('notes-modal-overlay').classList.add('hidden');
+  currentNotesKey = '';
+});
+
+document.getElementById('notes-modal-save').addEventListener('click', () => {
+  const val = document.getElementById('notes-modal-textarea').value.trim();
+  setState(currentNotesKey, val);
+  const aName = currentNotesKey.replace('aln__','');
+  const btn = document.getElementById('anote__' + aName.replace(/[^a-zA-Z0-9]/g,'_'));
+  if (btn) { btn.classList.toggle('has-notes', !!val); btn.title = val ? 'View/edit notes' : 'Add notes'; }
+  document.getElementById('notes-modal-overlay').classList.add('hidden');
+  currentNotesKey = '';
+});
+
+document.getElementById('notes-modal-overlay').addEventListener('click', function(e) {
+  if (e.target === this) { document.getElementById('notes-modal-overlay').classList.add('hidden'); currentNotesKey = ''; }
+});
+
+// ── MEAL PLAN LOGIC ────────────────────────────────────────────────
+// Stored in Firestore under key 'mealplan' as JSON array of weeks.
+// Each week: { id, num, days: [ {meals:[{id,name,ingredients}]} x7 ] }
+// Weeks are added manually (sequential numbering); newest (highest num) shown first.
+// (State variables MP_DAYS, mpExpandedWeeks, mpExpandedDays, mpInitialised are declared earlier, before initUI() runs.)
+
+function getMealPlan() {
+  try { return JSON.parse(localState['mealplan'] || '[]'); } catch { return []; }
+}
+function saveMealPlan(weeks) {
+  setState('mealplan', JSON.stringify(weeks));
+}
+
+// Shared "food dictionary" — names typed as new via "+ Add" (in the meal-plan ingredient
+// search) or added as a new Inventory food. Persisted so they keep being suggested even
+// after the Inventory batch that introduced them gets used up and deleted. Managed
+// (viewed/deleted) from the Meal Plan "⚙️ Saved Ingredients" screen.
+function getMpCustomIngredients() {
+  try { return JSON.parse(localState['mpCustomIngredients'] || '[]'); } catch { return []; }
+}
+function saveMpCustomIngredients(list) {
+  setState('mpCustomIngredients', JSON.stringify(list));
+}
+function getKnownFoods() {
+  const known = getAllFoods();
+  const custom = getMpCustomIngredients();
+  const merged = [...known];
+  custom.forEach(c => { if (!merged.some(f => f.toLowerCase() === c.toLowerCase())) merged.push(c); });
+  return merged.sort((a, b) => a.localeCompare(b));
+}
+function getAllMpFoods() { return getKnownFoods(); }
+// Registers a name into the persisted dictionary if it isn't already known. Used whenever
+// a new food/ingredient name is saved from Inventory or Meal Plan.
+function addToFoodDictionary(rawName) {
+  const name = (rawName || '').trim();
+  if (!name) return;
+  if (!getKnownFoods().some(f => f.toLowerCase() === name.toLowerCase())) {
+    const custom = getMpCustomIngredients();
+    custom.push(name);
+    saveMpCustomIngredients(custom);
+  }
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function renderMealPlan() {
+  const wrap = document.getElementById('mp-list-wrap');
+  if (!wrap) return;
+  const weeks = getMealPlan().slice().sort((a, b) => b.num - a.num); // newest first
+  if (!mpInitialised && weeks.length) {
+    const curNum = mpCurrentWeekNum();
+    const curWeek = weeks.find(w => w.num === curNum);
+    if (curWeek) {
+      mpExpandedWeeks.add(curWeek.id);
+      mpExpandedDays.add(curWeek.id + '_' + mpCurrentDayIndex());
+    } else {
+      mpExpandedWeeks.add(weeks[0].id); // fallback: no week covers today yet, expand newest
+    }
+    mpInitialised = true;
+  }
+  if (weeks.length === 0) {
+    wrap.innerHTML = '<div class="mp-empty"><span class="mp-empty-icon">📅</span><p>No weeks planned yet.<br>Tap <strong>+ Add Week</strong> to get started.</p></div>';
+    return;
+  }
+  const list = document.createElement('div');
+  list.className = 'mp-list';
+  list.innerHTML = weeks.map(renderWeekHtml).join('');
+  wrap.innerHTML = '';
+  wrap.appendChild(list);
+}
+
+function renderWeekHtml(week) {
+  const totalMeals = week.days.reduce((sum, d) => sum + d.meals.length, 0);
+  const expanded = mpExpandedWeeks.has(week.id);
+  const summaryHtml = renderSummaryHtml(week);
+  const daysHtml = week.days.map((day, idx) => renderDayHtml(week.id, week.num, idx, day)).join('');
+  return `
+    <div class="mp-week${expanded ? '' : ' collapsed'}">
+      <button class="mp-week-head" type="button" onclick="toggleMpWeek('${week.id}')">
+        <span class="mp-week-title">Week ${week.num}<span class="mp-week-dates">${mpWeekRangeLabel(week.num)}</span></span>
+        <span class="mp-count">${totalMeals} meal${totalMeals === 1 ? '' : 's'}</span>
+        <span class="mp-chevron">▾</span>
+      </button>
+      <div class="mp-week-body">${summaryHtml}${daysHtml}</div>
+    </div>`;
+}
+
+function mpInventoryQtyFor(name) {
+  return getInventory()
+    .filter(i => i.name.toLowerCase() === name.toLowerCase())
+    .reduce((sum, i) => sum + (i.portions || 0), 0);
+}
+
+function renderSummaryHtml(week) {
+  const key = week.id + '_summary';
+  const expanded = mpExpandedDays.has(key);
+  const comparing = mpComparingWeeks.has(week.id);
+  const counts = {};
+  week.days.forEach(day => day.meals.forEach(m => (m.ingredients || []).forEach(ing => {
+    counts[ing] = (counts[ing] || 0) + 1;
+  })));
+  const entries = Object.entries(counts).sort((a, b) => a[0].localeCompare(b[0]));
+  const rowsHtml = entries.length
+    ? entries.map(([ing, count]) => {
+        if (!comparing) {
+          return `<div class="mp-summary-row"><span class="mp-summary-ing">${escapeHtml(ing)}</span><span class="mp-summary-count">×${count}</span></div>`;
+        }
+        const available = mpInventoryQtyFor(ing);
+        const short = available < count;
+        return `<div class="mp-summary-row${short ? ' insufficient' : ''}"><span class="mp-summary-ing">${escapeHtml(ing)}</span><span class="mp-summary-count${short ? ' insufficient' : ''}">${count}/${available}</span></div>`;
+      }).join('')
+    : '<div class="mp-day-empty">No ingredients yet</div>';
+  const compareBtnHtml = entries.length
+    ? `<button class="mp-compare-btn" type="button" onclick="toggleMpCompare('${week.id}')">${comparing ? '✕ Hide inventory comparison' : '🔍 Compare to Inventory'}</button>`
+    : '';
+  return `
+    <div class="mp-day mp-summary${expanded ? '' : ' collapsed'}">
+      <button class="mp-day-head" type="button" onclick="toggleMpSummary('${week.id}')">
+        <span class="mp-day-title">📊 Summary</span>
+        <span class="mp-count">${entries.length} ingredient${entries.length === 1 ? '' : 's'}</span>
+        <span class="mp-chevron">▾</span>
+      </button>
+      <div class="mp-day-body mp-summary-body">${compareBtnHtml}${rowsHtml}</div>
+    </div>`;
+}
+
+function renderDayHtml(weekId, weekNum, idx, day) {
+  const key = weekId + '_' + idx;
+  const expanded = mpExpandedDays.has(key);
+  const n = day.meals.length;
+  const dayDate = mpWeekStartDate(weekNum);
+  dayDate.setDate(dayDate.getDate() + idx);
+  const isToday = weekNum === mpCurrentWeekNum() && idx === mpCurrentDayIndex();
+  const mealsHtml = day.meals.length
+    ? day.meals.map(m => renderMealHtml(weekId, idx, m)).join('')
+    : '<div class="mp-day-empty">No meals planned</div>';
+  return `
+    <div class="mp-day${expanded ? '' : ' collapsed'}">
+      <button class="mp-day-head" type="button" onclick="toggleMpDay('${weekId}',${idx})">
+        <span class="mp-day-title">${MP_DAYS[idx]}${isToday ? ' <span class="mp-today-badge">Today</span>' : ''}<span class="mp-day-date">${mpFormatDate(dayDate)}</span></span>
+        <span class="mp-count">${n} meal${n === 1 ? '' : 's'}</span>
+        <span class="mp-chevron">▾</span>
+      </button>
+      <div class="mp-day-body">
+        ${mealsHtml}
+        <button class="mp-add-meal-btn" type="button" onclick="openAddMealModal('${weekId}',${idx})">＋ Add meal</button>
+      </div>
+    </div>`;
+}
+
+function renderMealHtml(weekId, dayIdx, meal) {
+  const pills = (meal.ingredients && meal.ingredients.length)
+    ? meal.ingredients.map(ing => `<span class="inv-ingredient-pill">${escapeHtml(ing)}</span>`).join('')
+    : '<span style="font-size:10px;color:var(--dot-empty)">—</span>';
+  return `
+    <div class="mp-meal">
+      <div class="mp-meal-main">
+        <span class="mp-meal-name">${escapeHtml(meal.name)}</span>
+        <button class="inv-edit-btn" type="button" onclick="openEditMealModal('${weekId}',${dayIdx},'${meal.id}')">✏️</button>
+      </div>
+      <div class="inv-col-ings">${pills}</div>
+    </div>`;
+}
+
+window.toggleMpWeek = function(weekId) {
+  if (mpExpandedWeeks.has(weekId)) mpExpandedWeeks.delete(weekId); else mpExpandedWeeks.add(weekId);
+  renderMealPlan();
+};
+
+window.toggleMpDay = function(weekId, idx) {
+  const key = weekId + '_' + idx;
+  if (mpExpandedDays.has(key)) mpExpandedDays.delete(key); else mpExpandedDays.add(key);
+  renderMealPlan();
+};
+
+window.toggleMpSummary = function(weekId) {
+  const key = weekId + '_summary';
+  if (mpExpandedDays.has(key)) mpExpandedDays.delete(key); else mpExpandedDays.add(key);
+  renderMealPlan();
+};
+
+window.toggleMpCompare = function(weekId) {
+  if (mpComparingWeeks.has(weekId)) mpComparingWeeks.delete(weekId); else mpComparingWeeks.add(weekId);
+  renderMealPlan();
+};
+
+window.addMpWeek = function() {
+  const weeks = getMealPlan();
+  const nextNum = weeks.length ? Math.max(...weeks.map(w => w.num)) + 1 : 1;
+  const id = 'w' + Date.now();
+  const days = MP_DAYS.map(() => ({ meals: [] }));
+  weeks.push({ id, num: nextNum, days });
+  saveMealPlan(weeks);
+  mpExpandedWeeks.clear();
+  mpExpandedWeeks.add(id); // newest week auto-expands, others collapse
+  renderMealPlan();
+};
+
+// ── MEAL ADD/EDIT MODAL ───────────────────────────────────────────
+// (State variables mpModalIngredients, mpEditingWeekId, mpEditingDayIdx, mpEditingMealId declared earlier.)
+
+window.openAddMealModal = function(weekId, dayIdx) {
+  mpEditingWeekId = weekId;
+  mpEditingDayIdx = dayIdx;
+  mpEditingMealId = '';
+  mpModalIngredients = [];
+  document.getElementById('mp-modal-title').textContent = 'Add Meal';
+  document.getElementById('mp-modal-name').value = '';
+  document.getElementById('mp-ingredient-search').value = '';
+  document.getElementById('mp-ingredient-results').innerHTML = '';
+  document.getElementById('mp-ingredient-chips').innerHTML = '';
+  document.getElementById('mp-modal-delete-btn').style.display = 'none';
+  document.getElementById('mp-modal-overlay').classList.remove('hidden');
+  setTimeout(() => document.getElementById('mp-modal-name').focus(), 100);
+};
+
+window.openEditMealModal = function(weekId, dayIdx, mealId) {
+  const weeks = getMealPlan();
+  const week = weeks.find(w => w.id === weekId);
+  if (!week) return;
+  const day = week.days[dayIdx];
+  const meal = day.meals.find(m => m.id === mealId);
+  if (!meal) return;
+  mpEditingWeekId = weekId;
+  mpEditingDayIdx = dayIdx;
+  mpEditingMealId = mealId;
+  mpModalIngredients = [...(meal.ingredients || [])];
+  document.getElementById('mp-modal-title').textContent = 'Edit Meal';
+  document.getElementById('mp-modal-name').value = meal.name;
+  document.getElementById('mp-ingredient-search').value = '';
+  document.getElementById('mp-ingredient-results').innerHTML = '';
+  document.getElementById('mp-modal-delete-btn').style.display = 'block';
+  renderMpIngredientChips();
+  document.getElementById('mp-modal-overlay').classList.remove('hidden');
+};
+
+window.closeMpModal = function() {
+  document.getElementById('mp-modal-overlay').classList.add('hidden');
+  mpEditingWeekId = '';
+  mpEditingDayIdx = -1;
+  mpEditingMealId = '';
+};
+
+window.saveMpModal = function() {
+  const name = document.getElementById('mp-modal-name').value.trim();
+  if (!name) { alert('Please enter a meal name.'); return; }
+  const weeks = getMealPlan();
+  const week = weeks.find(w => w.id === mpEditingWeekId);
+  if (!week) return;
+  const day = week.days[mpEditingDayIdx];
+  const ingredients = [...mpModalIngredients];
+  if (mpEditingMealId) {
+    const meal = day.meals.find(m => m.id === mpEditingMealId);
+    if (meal) { meal.name = name; meal.ingredients = ingredients; }
+  } else {
+    day.meals.push({ id: 'm' + Date.now(), name, ingredients });
+  }
+  saveMealPlan(weeks);
+  renderMealPlan();
+  closeMpModal();
+};
+
+window.deleteMpModal = function() {
+  if (!mpEditingMealId) return;
+  if (!confirm('Delete this meal?')) return;
+  const weeks = getMealPlan();
+  const week = weeks.find(w => w.id === mpEditingWeekId);
+  if (week) {
+    const day = week.days[mpEditingDayIdx];
+    day.meals = day.meals.filter(m => m.id !== mpEditingMealId);
+  }
+  saveMealPlan(weeks);
+  renderMealPlan();
+  closeMpModal();
+};
+
+function renderMpIngredientResults(query) {
+  const resultsEl = document.getElementById('mp-ingredient-results');
+  resultsEl.innerHTML = '';
+  if (!query) return;
+  const q = query.toLowerCase();
+  const all = getAllMpFoods(); // known foods + previously saved custom meal-plan ingredients
+  all.filter(f => f.toLowerCase().includes(q)).slice(0, 6).forEach(food => {
+    const el = document.createElement('div');
+    el.className = 'inv-ingredient-result';
+    el.textContent = food;
+    el.onclick = () => addMpIngredient(food);
+    resultsEl.appendChild(el);
+  });
+  if (!all.some(f => f.toLowerCase() === q)) {
+    const el = document.createElement('div');
+    el.className = 'inv-ingredient-result';
+    el.style.color = 'var(--mint)';
+    el.textContent = '\uFF0B Add "' + query + '"';
+    el.onclick = () => addNewMpIngredient(query);
+    resultsEl.appendChild(el);
+  }
+}
+
+function addMpIngredient(food) {
+  if (!mpModalIngredients.includes(food)) mpModalIngredients.push(food);
+  document.getElementById('mp-ingredient-search').value = '';
+  document.getElementById('mp-ingredient-results').innerHTML = '';
+  renderMpIngredientChips();
+}
+
+// Called when the person taps "+ Add" for a genuinely new ingredient — saves it so it's
+// suggested (spelled consistently) next time instead of needing to be retyped.
+function addNewMpIngredient(rawName) {
+  const name = rawName.trim();
+  if (!name) return;
+  addToFoodDictionary(name);
+  addMpIngredient(name);
+}
+
+function renderMpIngredientChips() {
+  const chipsEl = document.getElementById('mp-ingredient-chips');
+  chipsEl.innerHTML = '';
+  mpModalIngredients.forEach((ing, i) => {
+    const chip = document.createElement('span');
+    chip.className = 'inv-chip';
+    chip.textContent = ing;
+    const rm = document.createElement('button');
+    rm.type = 'button';
+    rm.className = 'inv-chip-remove';
+    rm.textContent = '\xD7';
+    rm.onclick = () => { mpModalIngredients.splice(i, 1); renderMpIngredientChips(); };
+    chip.appendChild(rm);
+    chipsEl.appendChild(chip);
+  });
+}
+
+document.getElementById('mp-ingredient-search').addEventListener('input', function() {
+  renderMpIngredientResults(this.value.trim());
+});
+
+document.getElementById('mp-modal-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeMpModal();
+});
+
+// ── SAVED INGREDIENTS SETTINGS ────────────────────────────────────
+window.openMpSettings = function() {
+  renderMpSettingsList();
+  document.getElementById('mp-settings-overlay').classList.remove('hidden');
+};
+
+window.closeMpSettings = function() {
+  document.getElementById('mp-settings-overlay').classList.add('hidden');
+};
+
+function renderMpSettingsList() {
+  const wrap = document.getElementById('mp-settings-list');
+  wrap.innerHTML = '';
+  const custom = getMpCustomIngredients().slice().sort((a, b) => a.localeCompare(b));
+  if (!custom.length) {
+    const empty = document.createElement('div');
+    empty.className = 'mp-settings-empty';
+    empty.textContent = 'No custom ingredients saved yet. They\'ll show up here after you use "+ Add" while planning a meal.';
+    wrap.appendChild(empty);
+    return;
+  }
+  custom.forEach(name => {
+    const row = document.createElement('div');
+    row.className = 'mp-settings-row';
+    const label = document.createElement('span');
+    label.className = 'mp-settings-name';
+    label.textContent = name;
+    const del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'mp-settings-del';
+    del.textContent = '🗑';
+    del.onclick = () => deleteMpCustomIngredient(name);
+    row.appendChild(label);
+    row.appendChild(del);
+    wrap.appendChild(row);
+  });
+}
+
+// Removing a saved ingredient only stops it being suggested in future — meals that
+// already use it keep their ingredient text untouched.
+function deleteMpCustomIngredient(name) {
+  const custom = getMpCustomIngredients().filter(f => f !== name);
+  saveMpCustomIngredients(custom);
+  renderMpSettingsList();
+}
+
+document.getElementById('mp-settings-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeMpSettings();
+});
+
+// ── IMPORT WEEK ────────────────────────────────────────────────────
+// Format, one line per day: "Day: Meal = Ingredient, Ingredient | Meal2 = Ingredient"
+const MP_DAY_ABBR = {
+  sat: 'saturday', sun: 'sunday', mon: 'monday', tue: 'tuesday', tues: 'tuesday',
+  wed: 'wednesday', weds: 'wednesday', thu: 'thursday', thur: 'thursday', thurs: 'thursday', fri: 'friday'
+};
+
+function parseMpImportText(text) {
+  const dayIndexByName = {};
+  MP_DAYS.forEach((d, i) => { dayIndexByName[d.toLowerCase()] = i; });
+
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const dayResults = []; // [{dayIdx, meals:[{name,ingredients}]}]
+  const errors = [];
+
+  lines.forEach((line, i) => {
+    const colonIdx = line.indexOf(':');
+    if (colonIdx === -1) {
+      errors.push(`Line ${i + 1}: no ":" found — "${line}"`);
+      return;
+    }
+    let dayKey = line.slice(0, colonIdx).trim().toLowerCase();
+    if (MP_DAY_ABBR[dayKey]) dayKey = MP_DAY_ABBR[dayKey];
+    if (!(dayKey in dayIndexByName)) {
+      errors.push(`Line ${i + 1}: "${line.slice(0, colonIdx).trim()}" isn't a day of the week`);
+      return;
+    }
+    const dayIdx = dayIndexByName[dayKey];
+    const rest = line.slice(colonIdx + 1).trim();
+    if (!rest) return; // day listed with nothing after it — nothing to add
+
+    const meals = rest.split('|').map(s => s.trim()).filter(Boolean).map(part => {
+      const eqIdx = part.indexOf('=');
+      if (eqIdx === -1) return { name: part.trim(), ingredients: [] };
+      const name = part.slice(0, eqIdx).trim();
+      const ingStr = part.slice(eqIdx + 1).trim();
+      const ingredients = ingStr ? ingStr.split(',').map(s => s.trim()).filter(Boolean) : [];
+      return { name, ingredients };
+    }).filter(m => m.name);
+
+    if (!meals.length) return;
+    let entry = dayResults.find(r => r.dayIdx === dayIdx);
+    if (!entry) { entry = { dayIdx, meals: [] }; dayResults.push(entry); }
+    entry.meals.push(...meals);
+  });
+
+  return { dayResults, errors };
+}
+
+function renderMpImportPreview() {
+  const text = document.getElementById('mp-import-text').value;
+  const preview = document.getElementById('mp-import-preview');
+  preview.innerHTML = '';
+  if (!text.trim()) return;
+  const { dayResults, errors } = parseMpImportText(text);
+
+  if (!dayResults.length && !errors.length) return;
+
+  dayResults.slice().sort((a, b) => a.dayIdx - b.dayIdx).forEach(entry => {
+    const row = document.createElement('div');
+    row.className = 'mp-import-day';
+    row.innerHTML = `<span class="mp-import-day-icon">✓</span> ${MP_DAYS[entry.dayIdx]} — ${entry.meals.length} meal${entry.meals.length === 1 ? '' : 's'}`;
+    preview.appendChild(row);
+  });
+  errors.forEach(err => {
+    const row = document.createElement('div');
+    row.className = 'mp-import-error';
+    row.innerHTML = `<span class="mp-import-error-icon">⚠️</span> <span>${escapeHtml(err)}</span>`;
+    preview.appendChild(row);
+  });
+}
+
+function populateMpImportTargets() {
+  const select = document.getElementById('mp-import-target');
+  const weeks = getMealPlan().slice().sort((a, b) => b.num - a.num);
+  const nextNum = weeks.length ? Math.max(...weeks.map(w => w.num)) + 1 : 1;
+  select.innerHTML = '';
+  const newOpt = document.createElement('option');
+  newOpt.value = 'new';
+  newOpt.textContent = `+ New Week (Week ${nextNum})`;
+  select.appendChild(newOpt);
+  weeks.forEach(w => {
+    const opt = document.createElement('option');
+    opt.value = w.id;
+    opt.textContent = `Week ${w.num} (${mpWeekRangeLabel(w.num)})`;
+    select.appendChild(opt);
+  });
+}
+
+window.openMpImport = function() {
+  populateMpImportTargets();
+  document.getElementById('mp-import-text').value = '';
+  document.getElementById('mp-import-preview').innerHTML = '';
+  document.getElementById('mp-import-overlay').classList.remove('hidden');
+};
+
+window.closeMpImport = function() {
+  document.getElementById('mp-import-overlay').classList.add('hidden');
+};
+
+window.runMpImport = function() {
+  const text = document.getElementById('mp-import-text').value;
+  const { dayResults, errors } = parseMpImportText(text);
+  if (!dayResults.length) {
+    alert(errors.length ? 'Nothing could be imported — check the lines flagged in red.' : 'Paste your meal plan first.');
+    return;
+  }
+  if (errors.length && !confirm(`${errors.length} line${errors.length === 1 ? '' : 's'} couldn't be read and will be skipped. Import the rest?`)) {
+    return;
+  }
+
+  const target = document.getElementById('mp-import-target').value;
+  const weeks = getMealPlan();
+  let week;
+  if (target === 'new') {
+    const nextNum = weeks.length ? Math.max(...weeks.map(w => w.num)) + 1 : 1;
+    week = { id: 'w' + Date.now(), num: nextNum, days: MP_DAYS.map(() => ({ meals: [] })) };
+    weeks.push(week);
+  } else {
+    week = weeks.find(w => w.id === target);
+    if (!week) return;
+  }
+
+  let idCounter = 0;
+  dayResults.forEach(entry => {
+    entry.meals.forEach(m => {
+      week.days[entry.dayIdx].meals.push({ id: 'm' + Date.now() + '_' + (idCounter++), name: m.name, ingredients: m.ingredients });
+      m.ingredients.forEach(ing => addToFoodDictionary(ing));
+    });
+  });
+
+  saveMealPlan(weeks);
+  mpExpandedWeeks.clear();
+  mpExpandedWeeks.add(week.id);
+  renderMealPlan();
+  closeMpImport();
+};
+
+document.getElementById('mp-import-text').addEventListener('input', renderMpImportPreview);
+
+document.getElementById('mp-import-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeMpImport();
+});
+
+</script>
+</body>
+</html>
